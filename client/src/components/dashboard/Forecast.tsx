@@ -63,21 +63,70 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
           if (data.recommendation) {
             setAiRecommendation(data.recommendation);
           } else {
-            // Generate a simple recommendation based on AQI level
-            const todayAQI = data.daily && data.daily["0"] ? data.daily["0"].aqi : 50;
-            const todayLevel = getAQILevel(todayAQI);
-            
-            let recommendation = "Air quality is expected to be good today. Enjoy outdoor activities!";
-            
-            if (todayLevel === "moderate") {
-              recommendation = "Air quality is expected to remain moderate throughout the day. Consider keeping windows closed during peak traffic hours.";
-            } else if (todayLevel === "poor") {
-              recommendation = "Air quality is expected to be poor today. Consider limiting prolonged outdoor activities, especially if you have respiratory issues.";
-            } else if (todayLevel === "unhealthy" || todayLevel === "hazardous") {
-              recommendation = "Air quality is expected to be unhealthy today. Avoid outdoor activities and keep windows closed. Consider using air purifiers indoors.";
+            // We'll generate an AI recommendation using parameters
+            try {
+              // Import just when needed to avoid potential early initialization issues
+              const { generateAirQualityRecommendation } = require('@/lib/openai');
+              
+              // Get parameters for AI recommendation
+              const aqi = data.daily && data.daily["0"] ? data.daily["0"].aqi : 50;
+              const parameters = [];
+              
+              if (Object.keys(data.parameters || {}).length > 0) {
+                Object.entries(data.parameters).forEach(([id, param]: [string, any]) => {
+                  parameters.push({
+                    name: id === 'pm25' ? 'PM2.5' : 
+                          id === 'pm10' ? 'PM10' : 
+                          id === 'co2' ? 'CO₂' : 
+                          id.charAt(0).toUpperCase() + id.slice(1),
+                    value: param.value,
+                    unit: param.unit
+                  });
+                });
+              } else {
+                // Add some default parameter if none are available
+                parameters.push({ name: 'PM2.5', value: 35, unit: 'μg/m³' });
+              }
+              
+              // Generate recommendation asynchronously
+              generateAirQualityRecommendation(selectedLocation, aqi, parameters)
+                .then((aiRecommendation) => {
+                  setAiRecommendation(aiRecommendation);
+                })
+                .catch((error) => {
+                  console.error('Error generating AI recommendation:', error);
+                  // Fallback recommendation
+                  const todayLevel = getAQILevel(aqi);
+                  let fallbackRecommendation = "Air quality is expected to be good today. Enjoy outdoor activities!";
+                  
+                  if (todayLevel === "moderate") {
+                    fallbackRecommendation = "Air quality is expected to remain moderate throughout the day. Consider keeping windows closed during peak traffic hours.";
+                  } else if (todayLevel === "poor") {
+                    fallbackRecommendation = "Air quality is expected to be poor today. Consider limiting prolonged outdoor activities, especially if you have respiratory issues.";
+                  } else if (todayLevel === "unhealthy" || todayLevel === "hazardous") {
+                    fallbackRecommendation = "Air quality is expected to be unhealthy today. Avoid outdoor activities and keep windows closed. Consider using air purifiers indoors.";
+                  }
+                  
+                  setAiRecommendation(fallbackRecommendation);
+                });
+            } catch (error) {
+              console.error('Error initializing AI recommendation:', error);
+              // Fallback to simple recommendation
+              const todayAQI = data.daily && data.daily["0"] ? data.daily["0"].aqi : 50;
+              const todayLevel = getAQILevel(todayAQI);
+              
+              let recommendation = "Air quality is expected to be good today. Enjoy outdoor activities!";
+              
+              if (todayLevel === "moderate") {
+                recommendation = "Air quality is expected to remain moderate throughout the day. Consider keeping windows closed during peak traffic hours.";
+              } else if (todayLevel === "poor") {
+                recommendation = "Air quality is expected to be poor today. Consider limiting prolonged outdoor activities, especially if you have respiratory issues.";
+              } else if (todayLevel === "unhealthy" || todayLevel === "hazardous") {
+                recommendation = "Air quality is expected to be unhealthy today. Avoid outdoor activities and keep windows closed. Consider using air purifiers indoors.";
+              }
+              
+              setAiRecommendation(recommendation);
             }
-            
-            setAiRecommendation(recommendation);
           }
           
           setIsLoading(false);

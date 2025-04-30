@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertSubscriptionSchema, insertIncidentSchema } from "@shared/schema";
 import { z } from "zod";
+import { WebSocketServer } from "ws";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API route prefix
@@ -95,7 +96,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get environment variables for client
+  app.get(`${apiPrefix}/env`, (req, res) => {
+    res.json({
+      VITE_OPENAI_API_KEY: process.env.OPENAI_API_KEY
+    });
+  });
+
   const httpServer = createServer(app);
+  
+  // Setup WebSocket server for real-time updates
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+    
+    // Send initial message
+    ws.send(JSON.stringify({ type: 'connection', message: 'Connected to AirSense WebSocket server' }));
+    
+    // Handle messages
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log('Received message:', data);
+        
+        // Echo back the message for now
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify({ type: 'echo', data }));
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+    
+    // Handle close
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+    });
+  });
 
   return httpServer;
 }

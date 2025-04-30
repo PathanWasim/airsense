@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChatMessage } from "@/types/index";
+import { ChatMessage, AQIParameter } from "@/types/index";
+import { getAirQualityResponse } from "@/lib/openai";
+import { subscribeToData } from "@/lib/firebase";
 
 interface AIAssistantProps {
   selectedLocation: string;
@@ -19,7 +21,45 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [aqiData, setAqiData] = useState<{
+    aqi: number;
+    parameters: Array<{
+      name: string;
+      value: number;
+      unit: string;
+    }>;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch AQI data for context
+  useEffect(() => {
+    const unsubscribe = subscribeToData<any>('/', (data) => {
+      if (data && data.parameters) {
+        // Get overall AQI
+        const overallAqi = data.locations ? 
+          Object.values(data.locations).find((loc: any) => 
+            loc.name === selectedLocation
+          )?.aqi || 63 : 63;
+        
+        // Format parameters
+        const formattedParams = Object.entries(data.parameters).map(([id, param]: [string, any]) => ({
+          name: id === 'pm25' ? 'PM2.5' : 
+                id === 'pm10' ? 'PM10' : 
+                id === 'co2' ? 'CO₂' : 
+                id.charAt(0).toUpperCase() + id.slice(1),
+          value: param.value,
+          unit: param.unit
+        }));
+        
+        setAqiData({
+          aqi: overallAqi,
+          parameters: formattedParams
+        });
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [selectedLocation]);
 
   useEffect(() => {
     scrollToBottom();
@@ -29,7 +69,7 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!inputMessage.trim()) return;
@@ -46,34 +86,36 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
     setInputMessage("");
     setIsTyping(true);
     
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(inputMessage, selectedLocation);
+    try {
+      // Get AI response using OpenAI
+      const response = await getAirQualityResponse({
+        message: userMessage.message,
+        location: selectedLocation,
+        airQualityData: aqiData || undefined
+      });
+      
       const aiMessage: ChatMessage = {
         id: `ai-${Date.now()}`,
         sender: "ai",
-        message: aiResponse,
+        message: response.message,
         timestamp: Date.now()
       };
       
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      
+      // Fallback response
+      const errorMessage: ChatMessage = {
+        id: `ai-error-${Date.now()}`,
+        sender: "ai",
+        message: "I'm sorry, I couldn't process your request at the moment. Please try again later.",
+        timestamp: Date.now()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
-  };
-
-  const generateAIResponse = (message: string, location: string): string => {
-    const lowerMsg = message.toLowerCase();
-    
-    if (lowerMsg.includes("aqi") || lowerMsg.includes("air quality")) {
-      return `The current Air Quality Index (AQI) in ${location} is 52, which is considered "Moderate". The main pollutant is PM2.5 at 35 μg/m³. Would you like recommendations based on this air quality level?`;
-    } else if (lowerMsg.includes("exercise") || lowerMsg.includes("outdoor")) {
-      return `Based on the current "Moderate" air quality in ${location}, it is generally safe for most people to exercise outdoors. However, if you're unusually sensitive to air pollution, you might want to consider reducing prolonged or intense outdoor activities.`;
-    } else if (lowerMsg.includes("forecast")) {
-      return `Here's the air quality forecast for ${location}:\n\n- Today: AQI 52 (Moderate)\n- Tomorrow: AQI 38 (Good)\n- Day After: AQI 30 (Good)\n\nThe air quality is expected to improve over the next few days.`;
-    } else if (lowerMsg.includes("thank")) {
-      return "You're welcome! If you have any more questions about air quality or need further assistance, feel free to ask.";
-    } else {
-      return `I'm sorry, I'm not sure how to answer that. You can ask me about current air quality, forecasts, health recommendations, or specific pollutants in ${location}.`;
     }
   };
 

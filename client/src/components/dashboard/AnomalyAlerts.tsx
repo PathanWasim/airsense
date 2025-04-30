@@ -155,7 +155,7 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
             const styles = getAnomalyStyles(anomaly.priority);
             
             return (
-              <div key={anomaly.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-750">
+              <div key={anomaly.id} className="p-4 hover:scale-[1.01] transition-transform duration-200">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     <span className={`material-icons ${styles.color}`}>{styles.icon}</span>
