@@ -13,53 +13,67 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
   const [parameters, setParameters] = useState<AQIParameter[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
-    const unsubscribe = subscribeToData<any>('/parameters', (data) => {
+    setError(null);
+    
+    // Subscribe to Firebase data
+    const unsubscribe = subscribeToData<any>('parameters', (data) => {
       if (data) {
-        const formattedParams = Object.entries(data).map(([id, param]: [string, any]) => {
-          const level = getAQILevel(param.value);
-          let percentage = 0;
+        try {
+          const formattedParams = Object.entries(data).map(([id, param]: [string, any]) => {
+            const level = getAQILevel(param.value);
+            let percentage = 0;
+            
+            // Determine the percentage for the progress bar based on parameter type
+            if (id === 'pm25' || id === 'pm10') {
+              percentage = Math.min((param.value / 100) * 100, 100);
+            } else if (id === 'co') {
+              percentage = Math.min((param.value / 5) * 100, 100);
+            } else if (id === 'co2') {
+              percentage = Math.min((param.value / 1000) * 100, 100);
+            } else if (id === 'temperature') {
+              percentage = Math.min(((param.value - 10) / 30) * 100, 100);
+            } else if (id === 'humidity') {
+              percentage = param.value;
+            } else {
+              percentage = Math.min((param.value / 100) * 100, 100);
+            }
+            
+            return {
+              id,
+              name: id === 'pm25' ? 'PM2.5' : 
+                    id === 'pm10' ? 'PM10' : 
+                    id === 'co2' ? 'CO₂' : 
+                    id.charAt(0).toUpperCase() + id.slice(1),
+              value: param.value,
+              unit: param.unit,
+              level,
+              percentage
+            };
+          });
           
-          // Determine the percentage for the progress bar based on parameter type
-          if (id === 'pm25' || id === 'pm10') {
-            percentage = Math.min((param.value / 100) * 100, 100);
-          } else if (id === 'co') {
-            percentage = Math.min((param.value / 5) * 100, 100);
-          } else if (id === 'co2') {
-            percentage = Math.min((param.value / 1000) * 100, 100);
-          } else if (id === 'temperature') {
-            percentage = Math.min(((param.value - 10) / 30) * 100, 100);
-          } else if (id === 'humidity') {
-            percentage = param.value;
+          setParameters(formattedParams);
+          
+          // Set last updated time if available
+          if (data.lastUpdated) {
+            setLastUpdated(formatRelativeTime(data.lastUpdated));
           } else {
-            percentage = Math.min((param.value / 100) * 100, 100);
+            setLastUpdated("Just now");
           }
           
-          return {
-            id,
-            name: id === 'pm25' ? 'PM2.5' : 
-                  id === 'pm10' ? 'PM10' : 
-                  id === 'co2' ? 'CO₂' : 
-                  id.charAt(0).toUpperCase() + id.slice(1),
-            value: param.value,
-            unit: param.unit,
-            level,
-            percentage
-          };
-        });
-        
-        setParameters(formattedParams);
-        
-        // Set last updated time if available
-        if (data.lastUpdated) {
-          setLastUpdated(formatRelativeTime(data.lastUpdated));
-        } else {
-          setLastUpdated("Just now");
+          setIsLoading(false);
+        } catch (err) {
+          console.error("Error processing parameters data:", err);
+          setError("Failed to process data. Please check console for details.");
+          setIsLoading(false);
         }
-        
+      } else {
+        // No data returned from Firebase
         setIsLoading(false);
+        setError("No air quality data available. Please use the Initialize Data button above.");
       }
     });
     
@@ -81,6 +95,19 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
               <Skeleton className="h-2 w-full" />
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Live Air Quality Index</h2>
+        </div>
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg text-yellow-800 dark:text-yellow-200">
+          <p>{error}</p>
         </div>
       </div>
     );

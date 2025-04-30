@@ -8,10 +8,11 @@ import AnomalyAlerts from "@/components/dashboard/AnomalyAlerts";
 import AIAssistant from "@/components/dashboard/AIAssistant";
 import ReportsDownloads from "@/components/dashboard/ReportsDownloads";
 import UserInteractionPanel from "@/components/dashboard/UserInteractionPanel";
+import DataInitializer from "@/components/DataInitializer";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
-  const [selectedLocation, setSelectedLocation] = useState("City Center");
+  const [selectedLocation, setSelectedLocation] = useState("Downtown");
   const { toast } = useToast();
 
   const handleLocationChange = (location: string) => {
@@ -61,6 +62,8 @@ export default function Home() {
         onLocationChange={handleLocationChange}
         onRefresh={handleRefresh}
       />
+      
+      <DataInitializer />
       
       <LiveAQIOverview selectedLocation={selectedLocation} />
       
