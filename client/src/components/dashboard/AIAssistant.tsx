@@ -15,7 +15,7 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
     {
       id: "welcome",
       sender: "ai",
-      message: "Hello! I'm your AirSense AI assistant. How can I help you with air quality information today?",
+      message: "Hello! I'm your AirSense AI assistant powered by Google's Gemini. How can I help you with air quality information today? You can ask me about current AQI, pollutant levels, health recommendations, or forecasts for your area.",
       timestamp: Date.now()
     }
   ]);
@@ -93,7 +93,7 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
     setIsTyping(true);
     
     try {
-      // Get AI response using OpenAI
+      // Get AI response using Google's Gemini
       const response = await getAirQualityResponse({
         message: userMessage.message,
         location: selectedLocation,
@@ -137,8 +137,18 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
   return (
     <Card className="overflow-hidden flex flex-col h-full">
       <div className="p-4 border-b dark:border-gray-700">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white">AI Assistant</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Ask questions about air quality data</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white">AI Assistant</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Ask questions about air quality data</p>
+          </div>
+          <div className="flex items-center">
+            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 py-1 px-2 rounded-full flex items-center">
+              <span className="material-icons text-xs mr-1" style={{ color: "#4285F4" }}>smart_toy</span>
+              Powered by Gemini
+            </span>
+          </div>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ maxHeight: "300px" }}>
         {messages.map((msg) => (
