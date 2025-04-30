@@ -4,17 +4,33 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import LiveData from "@/pages/LiveData";
+import ForecastPage from "@/pages/ForecastPage";
+import AnomaliesPage from "@/pages/AnomaliesPage";
+import ReportsPage from "@/pages/ReportsPage";
+import AIAssistantPage from "@/pages/AIAssistantPage";
+import AboutPage from "@/pages/AboutPage";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileHeader from "@/components/layout/MobileHeader";
 import Footer from "@/components/layout/Footer";
 import { useDarkMode } from "@/hooks/useDarkMode";
+import DataInitializer from "@/components/DataInitializer";
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      <DataInitializer />
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/live-data" component={LiveData} />
+        <Route path="/forecast" component={ForecastPage} />
+        <Route path="/anomalies" component={AnomaliesPage} />
+        <Route path="/reports" component={ReportsPage} />
+        <Route path="/ai-assistant" component={AIAssistantPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </>
   );
 }
 

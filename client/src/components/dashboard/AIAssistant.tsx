@@ -216,6 +216,36 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
           >
             Show air quality forecast
           </button>
+          <button 
+            onClick={() => handleQuickQuestion("What are the main pollutants today?")}
+            className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
+          >
+            What are the main pollutants today?
+          </button>
+          <button 
+            onClick={() => handleQuickQuestion("How do I protect my family from pollution?")}
+            className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
+          >
+            How do I protect my family?
+          </button>
+          <button 
+            onClick={() => handleQuickQuestion("What are the health risks of current air quality?")}
+            className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
+          >
+            Health risks today
+          </button>
+          <button 
+            onClick={() => handleQuickQuestion("Compare air quality with other areas")}
+            className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
+          >
+            Compare with other areas
+          </button>
+          <button 
+            onClick={() => handleQuickQuestion("What causes air pollution here?")}
+            className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
+          >
+            Pollution sources
+          </button>
         </div>
       </div>
     </Card>
