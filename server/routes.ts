@@ -1,0 +1,101 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertSubscriptionSchema, insertIncidentSchema } from "@shared/schema";
+import { z } from "zod";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // API route prefix
+  const apiPrefix = "/api";
+
+  // Get all AQI parameters
+  app.get(`${apiPrefix}/parameters`, async (req, res) => {
+    try {
+      const parameters = await storage.getParameters();
+      res.json(parameters);
+    } catch (error) {
+      console.error("Error fetching parameters:", error);
+      res.status(500).json({ error: "Failed to fetch AQI parameters" });
+    }
+  });
+
+  // Get all locations
+  app.get(`${apiPrefix}/locations`, async (req, res) => {
+    try {
+      const locations = await storage.getLocations();
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      res.status(500).json({ error: "Failed to fetch locations" });
+    }
+  });
+
+  // Get all anomalies
+  app.get(`${apiPrefix}/anomalies`, async (req, res) => {
+    try {
+      const anomalies = await storage.getAnomalies();
+      res.json(anomalies);
+    } catch (error) {
+      console.error("Error fetching anomalies:", error);
+      res.status(500).json({ error: "Failed to fetch anomalies" });
+    }
+  });
+
+  // Get all reports
+  app.get(`${apiPrefix}/reports`, async (req, res) => {
+    try {
+      const reports = await storage.getReports();
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      res.status(500).json({ error: "Failed to fetch reports" });
+    }
+  });
+
+  // Get forecasts
+  app.get(`${apiPrefix}/forecasts`, async (req, res) => {
+    try {
+      const forecasts = await storage.getForecasts();
+      res.json(forecasts);
+    } catch (error) {
+      console.error("Error fetching forecasts:", error);
+      res.status(500).json({ error: "Failed to fetch forecasts" });
+    }
+  });
+
+  // Subscribe to alerts
+  app.post(`${apiPrefix}/subscribe`, async (req, res) => {
+    try {
+      const validatedData = insertSubscriptionSchema.parse(req.body);
+      const subscription = await storage.createSubscription(validatedData);
+      res.status(201).json(subscription);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating subscription:", error);
+        res.status(500).json({ error: "Failed to create subscription" });
+      }
+    }
+  });
+
+  // Report an incident
+  app.post(`${apiPrefix}/incidents`, async (req, res) => {
+    try {
+      const validatedData = insertIncidentSchema.parse(req.body);
+      const incident = await storage.createIncident(validatedData);
+      res.status(201).json(incident);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        console.error("Error creating incident:", error);
+        res.status(500).json({ error: "Failed to create incident" });
+      }
+    }
+  });
+
+  const httpServer = createServer(app);
+
+  return httpServer;
+}
