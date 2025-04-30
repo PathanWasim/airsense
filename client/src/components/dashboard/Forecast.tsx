@@ -18,7 +18,7 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
   useEffect(() => {
     setIsLoading(true);
     
-    const unsubscribe = subscribeToData<any>('/forecast', (data) => {
+    const unsubscribe = subscribeToData<any>('forecast', (data) => {
       if (data) {
         try {
           // Process 6-hour forecast

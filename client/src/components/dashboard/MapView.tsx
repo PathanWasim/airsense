@@ -19,7 +19,7 @@ export default function MapView({ selectedLocation, onLocationSelect }: MapViewP
   useEffect(() => {
     setIsLoading(true);
     
-    const unsubscribe = subscribeToData<any>('/locations', (data) => {
+    const unsubscribe = subscribeToData<any>('locations', (data) => {
       if (data) {
         try {
           const formattedLocations = Object.entries(data).map(([id, loc]: [string, any]) => {

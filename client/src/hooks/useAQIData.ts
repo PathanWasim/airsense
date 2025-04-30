@@ -33,7 +33,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
   useEffect(() => {
     setData(prev => ({ ...prev, isLoading: true }));
     
-    const unsubscribe = subscribeToData<any>('/', (fbData) => {
+    const unsubscribe = subscribeToData<any>('', (fbData) => {
       if (fbData) {
         try {
           // Process parameters

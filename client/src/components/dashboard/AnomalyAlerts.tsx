@@ -16,7 +16,7 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
   useEffect(() => {
     setIsLoading(true);
     
-    const unsubscribe = subscribeToData<any>('/anomalies', (data) => {
+    const unsubscribe = subscribeToData<any>('anomalies', (data) => {
       if (data) {
         try {
           const formattedAnomalies = Object.entries(data).map(([id, anomaly]: [string, any]) => ({

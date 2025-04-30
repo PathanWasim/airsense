@@ -15,7 +15,7 @@ export default function ReportsDownloads({ selectedLocation }: ReportsDownloadsP
   useEffect(() => {
     setIsLoading(true);
     
-    const unsubscribe = subscribeToData<any>('/reports', (data) => {
+    const unsubscribe = subscribeToData<any>('reports', (data) => {
       if (data) {
         try {
           const formattedReports = Object.entries(data).map(([id, report]: [string, any]) => {
