@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChatMessage, AQIParameter } from "@/types/index";
-import { getAirQualityResponse } from "@/lib/openai";
+import { getAirQualityResponse } from "@/lib/gemini"; // Updated to use Gemini
 import { subscribeToData } from "@/lib/firebase";
 
 interface AIAssistantProps {
@@ -33,32 +33,38 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
 
   // Fetch AQI data for context
   useEffect(() => {
-    const unsubscribe = subscribeToData<any>('/', (data) => {
-      if (data && data.parameters) {
-        // Get overall AQI
-        const overallAqi = data.locations ? 
-          Object.values(data.locations).find((loc: any) => 
-            loc.name === selectedLocation
-          )?.aqi || 63 : 63;
+    const locationsSub = subscribeToData<any>('locations', (locationsData) => {
+      if (locationsData) {
+        // Find the matching location to get overall AQI
+        const foundLocation = Object.values(locationsData).find((loc: any) => 
+          loc.name === selectedLocation
+        );
         
-        // Format parameters
-        const formattedParams = Object.entries(data.parameters).map(([id, param]: [string, any]) => ({
-          name: id === 'pm25' ? 'PM2.5' : 
-                id === 'pm10' ? 'PM10' : 
-                id === 'co2' ? 'CO₂' : 
-                id.charAt(0).toUpperCase() + id.slice(1),
-          value: param.value,
-          unit: param.unit
-        }));
-        
-        setAqiData({
-          aqi: overallAqi,
-          parameters: formattedParams
+        // Get parameters data separately
+        const paramsSub = subscribeToData<any>('parameters', (parametersData) => {
+          if (parametersData) {
+            // Format parameters
+            const formattedParams = Object.entries(parametersData).map(([id, param]: [string, any]) => ({
+              name: id === 'pm25' ? 'PM2.5' : 
+                    id === 'pm10' ? 'PM10' : 
+                    id === 'co2' ? 'CO₂' : 
+                    id.charAt(0).toUpperCase() + id.slice(1),
+              value: param.value,
+              unit: param.unit
+            }));
+            
+            setAqiData({
+              aqi: foundLocation?.aqi || 63,
+              parameters: formattedParams
+            });
+          }
         });
+        
+        return () => paramsSub();
       }
     });
     
-    return () => unsubscribe();
+    return () => locationsSub();
   }, [selectedLocation]);
 
   useEffect(() => {
