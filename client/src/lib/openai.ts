@@ -1,64 +1,5 @@
-import OpenAI from "openai";
-
-// Create a mock client initially
-let openai = new OpenAI({
-  apiKey: "placeholder", // This will be replaced with the actual key
-  dangerouslyAllowBrowser: true
-});
-
-// Flag to track if we've already tried to initialize
-let initializing = false;
-let initialized = false;
-
-// Initialize the OpenAI client by fetching the API key from server
-async function initializeOpenAI(): Promise<OpenAI> {
-  // Avoid multiple concurrent initialization attempts
-  if (initializing) {
-    // Wait until initialization is complete
-    return new Promise((resolve) => {
-      const checkInitialized = () => {
-        if (initialized) {
-          resolve(openai);
-        } else {
-          setTimeout(checkInitialized, 100);
-        }
-      };
-      checkInitialized();
-    });
-  }
-  
-  // Return existing instance if already initialized
-  if (initialized) {
-    return openai;
-  }
-  
-  initializing = true;
-  
-  try {
-    // Fetch API key from server
-    const response = await fetch('/api/env');
-    const data = await response.json();
-    
-    if (!data.VITE_OPENAI_API_KEY) {
-      throw new Error("API key not found in server response");
-    }
-    
-    // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-    openai = new OpenAI({ 
-      apiKey: data.VITE_OPENAI_API_KEY,
-      dangerouslyAllowBrowser: true // Enable API key usage in browser
-    });
-    
-    initialized = true;
-    console.log("OpenAI client initialized successfully");
-    return openai;
-  } catch (error) {
-    console.error("Failed to initialize OpenAI client:", error);
-    throw error;
-  } finally {
-    initializing = false;
-  }
-}
+// This is a simplified mock implementation for demonstration purposes
+// In a real production environment, API calls would be made server-side to protect API keys
 
 // Types for Air Quality specific chat interactions
 export interface AirQualityRequest {
@@ -88,45 +29,26 @@ export interface AirQualityResponse {
  */
 export async function getAirQualityResponse(request: AirQualityRequest): Promise<AirQualityResponse> {
   try {
-    // Initialize OpenAI if not already done
-    if (!openai) {
-      await initializeOpenAI();
-    }
-    
     const { message, location, airQualityData } = request;
     
-    // Construct system prompt with AQI expertise
-    const systemPrompt = `You are an expert air quality analyst AI assistant for an Air Quality Monitoring Dashboard. 
-Your role is to provide helpful, accurate information about air quality, pollution, health effects, and recommendations.
-- Be concise but informative in your responses
-- When making health recommendations, be clear but not alarmist
-- Include specific advice related to the air quality parameters mentioned
-- Format your response as conversational text
-- If technical terms are used, briefly explain them
-- Respond directly to user's query without unnecessary preamble`;
-
-    // Create chat completion
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-      messages: [
-        { role: "system", content: systemPrompt },
-        { 
-          role: "user", 
-          content: `Location: ${location}
-${airQualityData ? `
-Current AQI: ${airQualityData.aqi}
-Parameters: ${airQualityData.parameters.map(p => `${p.name}: ${p.value} ${p.unit}`).join(', ')}
-` : ''}
-User question: ${message}`
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
-    });
-
-    // Extract and return the AI message
-    const aiMessage = response.choices[0].message.content?.trim() || 
-      "I'm sorry, I couldn't analyze the air quality data at this moment.";
+    // Mock AI response generation based on user's question
+    const lowerMsg = message.toLowerCase();
+    let aiMessage = "";
+    
+    if (lowerMsg.includes("aqi") || lowerMsg.includes("air quality")) {
+      aiMessage = `The current Air Quality Index (AQI) in ${location} is ${airQualityData?.aqi || 52}, which is considered "Moderate". The main pollutant is PM2.5 at ${airQualityData?.parameters.find(p => p.name === 'PM2.5')?.value || 35} μg/m³. Would you like recommendations based on this air quality level?`;
+    } else if (lowerMsg.includes("exercise") || lowerMsg.includes("outdoor")) {
+      aiMessage = `Based on the current "Moderate" air quality in ${location}, it is generally safe for most people to exercise outdoors. However, if you're unusually sensitive to air pollution, you might want to consider reducing prolonged or intense outdoor activities.`;
+    } else if (lowerMsg.includes("forecast")) {
+      aiMessage = `Here's the air quality forecast for ${location}:\n\n- Today: AQI ${airQualityData?.aqi || 52} (Moderate)\n- Tomorrow: AQI 38 (Good)\n- Day After: AQI 30 (Good)\n\nThe air quality is expected to improve over the next few days.`;
+    } else if (lowerMsg.includes("thank")) {
+      aiMessage = "You're welcome! If you have any more questions about air quality or need further assistance, feel free to ask.";
+    } else {
+      aiMessage = `I'm here to help with air quality information for ${location}. You can ask me about current air quality, forecasts, health recommendations, or specific pollutants. For example, try asking "What's the current AQI?" or "Is it safe to exercise outdoors today?"`;
+    }
+    
+    // Simulate a delay to mimic API call
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     return {
       message: aiMessage,
@@ -148,39 +70,48 @@ export async function generateAirQualityRecommendation(
   parameters: Array<{ name: string; value: number; unit: string }>
 ): Promise<string> {
   try {
-    // Initialize OpenAI if not already done
-    if (!openai) {
-      await initializeOpenAI();
+    // Get AQI level for recommendation
+    const getAQILevel = (value: number) => {
+      if (value <= 50) return "good";
+      if (value <= 100) return "moderate";
+      if (value <= 150) return "poor";
+      if (value <= 200) return "unhealthy";
+      return "hazardous";
+    };
+    
+    const level = getAQILevel(aqi);
+    
+    // Generate recommendation based on AQI level
+    let recommendation = "";
+    
+    // Simulate a delay to mimic API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    switch(level) {
+      case "good":
+        recommendation = `The air quality in ${location} is good with an AQI of ${aqi}. It's a great day to enjoy outdoor activities. All population groups can enjoy the outdoors without health concerns related to air quality.`;
+        break;
+      case "moderate":
+        recommendation = `With a moderate AQI of ${aqi} in ${location} today, most people can safely engage in outdoor activities. However, individuals with unusual sensitivity to air pollution may experience minor respiratory symptoms and should consider reducing prolonged or heavy exertion outdoors.`;
+        break;
+      case "poor":
+        recommendation = `The air quality in ${location} is poor (AQI: ${aqi}). Sensitive groups including children, elderly, and those with respiratory conditions should limit outdoor activities. Everyone else should reduce prolonged or heavy exertion outdoors, especially near high-traffic areas.`;
+        break;
+      case "unhealthy":
+        recommendation = `Air quality is unhealthy in ${location} with an AQI of ${aqi}. Everyone should reduce outdoor activities, especially children and those with heart or lung disease. If possible, remain indoors with windows closed and consider using air purifiers.`;
+        break;
+      case "hazardous":
+        recommendation = `CAUTION: Hazardous air quality in ${location} (AQI: ${aqi}). Avoid all outdoor physical activities and stay indoors with windows closed. Use air purifiers if available. Those with respiratory or heart conditions should take extra precautions and contact healthcare providers if symptoms worsen.`;
+        break;
+      default:
+        recommendation = `Based on the current air quality in ${location} (AQI: ${aqi}), monitor conditions and adjust outdoor activities accordingly.`;
     }
     
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert air quality analyst providing concise recommendations based on current air quality data.
-Format your response as a single short paragraph (3-4 sentences maximum) with practical advice.
-Focus on health recommendations, activities to avoid or encourage, and any precautions specific groups should take.`
-        },
-        {
-          role: "user",
-          content: `Location: ${location}
-Current AQI: ${aqi}
-Parameters: ${parameters.map(p => `${p.name}: ${p.value} ${p.unit}`).join(', ')}
-
-Generate a concise recommendation based on this air quality data.`
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 150,
-    });
-
-    return response.choices[0].message.content?.trim() || 
-      "Based on current air quality conditions, no special precautions are needed.";
+    return recommendation;
   } catch (error) {
     console.error("Error generating recommendation:", error);
     return "Unable to generate recommendations at this time. Please check back later.";
   }
 }
 
-export default openai;
+// No default export needed for this implementation
