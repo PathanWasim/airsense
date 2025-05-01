@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { subscribeToData } from "@/lib/firebase";
+import { subscribeToData, updateData } from "@/lib/firebase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Anomaly } from "@/types/index";
@@ -15,41 +15,8 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
 
   useEffect(() => {
     setIsLoading(true);
-    
-    const unsubscribe = subscribeToData<any>('anomalies', async (data) => {
-      if (data) {
-        const anomaliesArray = Object.entries(data)
-          .map(([id, anomaly]: [string, any]) => ({
-            id,
-            ...anomaly,
-            relativeTime: formatRelativeTime(anomaly.timestamp)
-          }))
-          .sort((a, b) => b.timestamp - a.timestamp);
 
-        // Keep only the last 5 alerts
-        if (anomaliesArray.length > 5) {
-          const oldestAnomalies = anomaliesArray.slice(5);
-          // Remove old anomalies from Firebase
-          const updates = oldestAnomalies.reduce((acc, anomaly) => {
-            acc[`anomalies/${anomaly.id}`] = null;
-            return acc;
-          }, {});
-          await updateData('/', updates);
-        }
-
-        // Update audit trail
-        const auditData = anomaliesArray.reduce((acc, anomaly) => {
-          if (!acc[anomaly.parameter]) {
-            acc[anomaly.parameter] = {
-              lastAlert: anomaly.timestamp,
-              count: 1,
-              currentStatus: 'alert'
-            };
-          }
-          return acc;
-        }, {});
-        
-        await updateData('anomalyAudit', auditData);
+    const unsubscribe = subscribeToData<any>('anomalies', (data) => {
       if (data) {
         try {
           const formattedAnomalies = Object.entries(data).map(([id, anomaly]: [string, any]) => ({
@@ -61,10 +28,10 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
             priority: anomaly.priority as "high" | "medium" | "low" | "resolved",
             zone: anomaly.zone
           }));
-          
+
           // Sort by timestamp (most recent first)
           formattedAnomalies.sort((a, b) => b.timestamp - a.timestamp);
-          
+
           setAnomalies(formattedAnomalies);
         } catch (error) {
           console.error("Error processing anomalies data:", error);
@@ -73,7 +40,7 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
         }
       }
     });
-    
+
     return () => {
       unsubscribe();
     };
@@ -186,7 +153,7 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
         ) : (
           anomalies.map((anomaly) => {
             const styles = getAnomalyStyles(anomaly.priority);
-            
+
             return (
               <div key={anomaly.id} className="p-4 hover:scale-[1.01] transition-transform duration-200">
                 <div className="flex items-start">
