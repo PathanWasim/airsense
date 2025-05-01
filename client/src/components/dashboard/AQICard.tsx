@@ -51,10 +51,23 @@ export default function AQICard({ parameter }: AQICardProps) {
         </div>
         <div className="mt-4">
           <div className="relative pt-1">
-            <div className="overflow-hidden h-3 mb-4 text-xs flex rounded bg-gray-200 dark:bg-gray-700">
-              <div 
-                style={{ width: `${parameter.percentage}%` }} 
-                className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-300 ${getAQIBarColor(parameter.level as any)}`}
+            <div className="w-full bg-slate-700 rounded-full h-1.5">
+              <div
+                className={`${
+                  parameter.level === "good"
+                    ? "bg-green-500"
+                    : parameter.level === "moderate"
+                      ? "bg-yellow-500"
+                      : parameter.level === "poor"
+                        ? "bg-orange-500"
+                        : parameter.level === "unhealthy"
+                          ? "bg-red-500"
+                          : parameter.level === "hazardous"
+                            ? "bg-purple-800"
+                            : "bg-gray-400"
+                } 
+                            h-1.5 rounded-full transition-all duration-300`}
+                style={{ width: `${parameter.percentage}%` }}
               ></div>
             </div>
             <div className="flex justify-between text-xs text-gray-500">
