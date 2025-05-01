@@ -34,11 +34,11 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
 
   useEffect(() => {
     setData(prev => ({ ...prev, isLoading: true }));
-    
+
     const createAutomaticAlert = async (parameter: string, value: number, threshold: number) => {
       const anomalies = await storage.getAnomalies();
       const anomalyArray = Object.entries(anomalies || {});
-      
+
       // Create new anomaly
       const anomalyData = {
         title: `High ${parameter} Alert`,
@@ -47,7 +47,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
         priority: "high",
         zone: location
       };
-      
+
       // Remove oldest anomaly if there are more than 5
       if (anomalyArray.length >= 5) {
         const oldestAnomaly = anomalyArray.sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
@@ -55,7 +55,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
           await storage.removeAnomaly(oldestAnomaly[0]);
         }
       }
-      
+
       // Add new anomaly
       const anomalyId = `anom${Date.now()}`;
       await storage.createAnomaly(anomalyId, anomalyData);
@@ -68,7 +68,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
           const parameters = fbData.parameters ? Object.entries(fbData.parameters).map(([id, param]: [string, any]) => {
             const level = getAQILevel(param.value);
             let percentage = 0;
-            
+
             // Determine the percentage for the progress bar based on parameter type
             if (id === 'pm25' || id === 'pm10') {
               percentage = Math.min((param.value / 100) * 100, 100);
@@ -77,8 +77,8 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
             } else if (id === 'co2') {
               percentage = Math.min((param.value / 1000) * 100, 100);
               // Check CO₂ threshold
-              if (param.value > 700) {
-                createAutomaticAlert('CO₂', param.value, 700);
+              if (param.value > 755) {
+                createAutomaticAlert('CO₂', param.value, 755);
               }
             } else if (id === 'pm25') {
               percentage = Math.min((param.value / 75) * 100, 100);
@@ -93,7 +93,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
             } else {
               percentage = Math.min((param.value / 100) * 100, 100);
             }
-            
+
             return {
               id,
               name: id === 'pm25' ? 'PM2.5' : 
@@ -106,11 +106,11 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
               percentage
             };
           }) : [];
-          
+
           // Process locations
           const locations = fbData.locations ? Object.entries(fbData.locations).map(([id, loc]: [string, any]) => {
             const level = getAQILevel(loc.aqi);
-            
+
             return {
               id,
               name: loc.name,
@@ -120,7 +120,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
               level
             };
           }) : [];
-          
+
           // Process hourly forecast
           const hourlyForecast = fbData.forecast?.hourly ? Object.entries(fbData.forecast.hourly).map(([id, item]: [string, any]) => {
             const level = getAQILevel(item.aqi);
@@ -133,7 +133,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
               relativeTime: id === "0" ? "Now" : `+${id}h`
             };
           }) : [];
-          
+
           // Process daily forecast
           const dailyForecast = fbData.forecast?.daily ? Object.entries(fbData.forecast.daily).map(([id, item]: [string, any]) => {
             const level = getAQILevel(item.aqi);
@@ -150,7 +150,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
               level
             };
           }) : [];
-          
+
           // Process anomalies
           const anomalies = fbData.anomalies ? Object.entries(fbData.anomalies).map(([id, anomaly]: [string, any]) => ({
             id,
@@ -161,13 +161,13 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
             priority: anomaly.priority as "high" | "medium" | "low" | "resolved",
             zone: anomaly.zone
           })) : [];
-          
+
           // Sort anomalies by timestamp (most recent first)
           anomalies.sort((a, b) => b.timestamp - a.timestamp);
-          
+
           // Set last updated time
           const lastUpdated = fbData.lastUpdated ? formatRelativeTime(fbData.lastUpdated) : "Just now";
-          
+
           setData({
             parameters,
             locations,
@@ -178,7 +178,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
             isLoading: false,
             error: null
           });
-          
+
         } catch (error) {
           console.error("Error processing data:", error);
           setData(prev => ({ 
@@ -189,7 +189,7 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
         }
       }
     });
-    
+
     return () => {
       unsubscribe();
     };
