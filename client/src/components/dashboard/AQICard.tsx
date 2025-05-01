@@ -43,11 +43,15 @@ export default function AQICard({ parameter }: AQICardProps) {
         </div>
         <div className="mt-4">
           <div className="relative pt-1">
-            <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200 dark:bg-gray-700">
+            <div className="overflow-hidden h-3 mb-4 text-xs flex rounded bg-gray-200 dark:bg-gray-700">
               <div 
                 style={{ width: `${parameter.percentage}%` }} 
-                className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${getAQIBarColor(parameter.level as any)}`}
+                className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-300 ${getAQIBarColor(parameter.level as any)}`}
               ></div>
+            </div>
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>0</span>
+              <span>{parameter.id === 'pm25' ? '100 μg/m³' : parameter.id === 'co2' ? '1000 ppm' : '100%'}</span>
             </div>
           </div>
         </div>

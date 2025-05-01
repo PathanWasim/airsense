@@ -120,4 +120,11 @@ export interface FirebaseAQIData {
       fileType: string;
     }
   };
+  anomalyAudit: {
+    [parameter: string]: {
+      lastAlert: number;
+      count: number;
+      currentStatus: string;
+    }
+  };
 }

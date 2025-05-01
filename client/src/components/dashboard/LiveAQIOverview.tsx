@@ -57,6 +57,28 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
           
           setParameters(formattedParams);
           
+          // Check for anomalies
+          formattedParams.forEach(param => {
+            if ((param.id === 'pm25' && param.value > 100) || 
+                (param.id === 'co2' && param.value > 1000)) {
+              
+              const anomalyData = {
+                title: `High ${param.name} Level`,
+                description: `${param.name} has exceeded threshold: ${param.value} ${param.unit}`,
+                timestamp: Date.now(),
+                priority: 'high',
+                zone: selectedLocation,
+                parameter: param.id,
+                value: param.value
+              };
+
+              // Update Firebase with new anomaly
+              updateData('anomalies', {
+                [`alert-${Date.now()}`]: anomalyData
+              });
+            }
+          });
+
           // Set last updated time if available
           if (data.lastUpdated) {
             setLastUpdated(formatRelativeTime(data.lastUpdated));

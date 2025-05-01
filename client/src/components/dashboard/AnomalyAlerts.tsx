@@ -16,7 +16,40 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
   useEffect(() => {
     setIsLoading(true);
     
-    const unsubscribe = subscribeToData<any>('anomalies', (data) => {
+    const unsubscribe = subscribeToData<any>('anomalies', async (data) => {
+      if (data) {
+        const anomaliesArray = Object.entries(data)
+          .map(([id, anomaly]: [string, any]) => ({
+            id,
+            ...anomaly,
+            relativeTime: formatRelativeTime(anomaly.timestamp)
+          }))
+          .sort((a, b) => b.timestamp - a.timestamp);
+
+        // Keep only the last 5 alerts
+        if (anomaliesArray.length > 5) {
+          const oldestAnomalies = anomaliesArray.slice(5);
+          // Remove old anomalies from Firebase
+          const updates = oldestAnomalies.reduce((acc, anomaly) => {
+            acc[`anomalies/${anomaly.id}`] = null;
+            return acc;
+          }, {});
+          await updateData('/', updates);
+        }
+
+        // Update audit trail
+        const auditData = anomaliesArray.reduce((acc, anomaly) => {
+          if (!acc[anomaly.parameter]) {
+            acc[anomaly.parameter] = {
+              lastAlert: anomaly.timestamp,
+              count: 1,
+              currentStatus: 'alert'
+            };
+          }
+          return acc;
+        }, {});
+        
+        await updateData('anomalyAudit', auditData);
       if (data) {
         try {
           const formattedAnomalies = Object.entries(data).map(([id, anomaly]: [string, any]) => ({
