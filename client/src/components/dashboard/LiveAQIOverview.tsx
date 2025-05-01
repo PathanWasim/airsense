@@ -11,23 +11,21 @@ interface LiveAQIOverviewProps {
 
 export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewProps) {
   const [parameters, setParameters] = useState<AQIParameter[]>([]);
-  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [lastUpdated, setLastUpdated] = useState("Just now");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
-    
-    // Subscribe to Firebase data
-    const unsubscribe = subscribeToData<any>('parameters', (data) => {
-      if (data) {
-        try {
-          const formattedParams = Object.entries(data).map(([id, param]: [string, any]) => {
+
+    const unsubscribe = subscribeToData<any>('parameters', (parametersData) => {
+      try {
+        if (parametersData) {
+          const formattedParams = Object.entries(parametersData).map(([id, param]: [string, any]) => {
             const level = getAQILevel(param.value);
             let percentage = 0;
-            
-            // Determine the percentage for the progress bar based on parameter type
+
             if (id === 'pm25' || id === 'pm10') {
               percentage = Math.min((param.value / 100) * 100, 100);
             } else if (id === 'co') {
@@ -41,7 +39,7 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
             } else {
               percentage = Math.min((param.value / 100) * 100, 100);
             }
-            
+
             return {
               id,
               name: id === 'pm25' ? 'PM2.5' : 
@@ -54,67 +52,31 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
               percentage
             };
           });
-          
+
           setParameters(formattedParams);
-          
-          // Check for anomalies
-          formattedParams.forEach(param => {
-            if ((param.id === 'pm25' && param.value > 100) || 
-                (param.id === 'co2' && param.value > 1000)) {
-              
-              const anomalyData = {
-                title: `High ${param.name} Level`,
-                description: `${param.name} has exceeded threshold: ${param.value} ${param.unit}`,
-                timestamp: Date.now(),
-                priority: 'high',
-                zone: selectedLocation,
-                parameter: param.id,
-                value: param.value
-              };
-
-              // Update Firebase with new anomaly
-              updateData('anomalies', {
-                [`alert-${Date.now()}`]: anomalyData
-              });
-            }
-          });
-
-          // Set last updated time if available
-          if (data.lastUpdated) {
-            setLastUpdated(formatRelativeTime(data.lastUpdated));
-          } else {
-            setLastUpdated("Just now");
-          }
-          
-          setIsLoading(false);
-        } catch (err) {
-          console.error("Error processing parameters data:", err);
-          setError("Failed to process data. Please check console for details.");
-          setIsLoading(false);
+          setLastUpdated(formatRelativeTime(Date.now()));
+          setError(null);
+        } else {
+          setError("No data available");
         }
-      } else {
-        // No data returned from Firebase
+      } catch (error) {
+        console.error("Error processing parameters data:", error);
+        setError("Failed to process data");
+      } finally {
         setIsLoading(false);
-        setError("No air quality data available. Please use the Initialize Data button above.");
       }
     });
-    
+
     return () => unsubscribe();
   }, [selectedLocation]);
 
   if (isLoading) {
     return (
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-6 w-36" />
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden p-6">
-              <Skeleton className="h-6 w-24 mb-2" />
-              <Skeleton className="h-8 w-20 mb-4" />
-              <Skeleton className="h-2 w-full" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6">
+              <Skeleton className="h-24 w-full" />
             </div>
           ))}
         </div>
@@ -124,13 +86,9 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
 
   if (error) {
     return (
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Live Air Quality Index</h2>
-        </div>
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg text-yellow-800 dark:text-yellow-200">
-          <p>{error}</p>
-        </div>
+      <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+        <p className="text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-sm text-red-500 dark:text-red-300 mt-1">Please try refreshing the page or check your connection.</p>
       </div>
     );
   }
@@ -144,7 +102,7 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
           <span>Last updated: <span className="font-mono">{lastUpdated}</span></span>
         </span>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {parameters.map((param) => (
           <AQICard key={param.id} parameter={param} />
