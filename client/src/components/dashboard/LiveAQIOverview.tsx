@@ -26,18 +26,18 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
             const level = getAQILevel(param.value);
             let percentage = 0;
 
-            if (id === 'pm25' || id === 'pm10') {
-              percentage = Math.min((param.value / 100) * 100, 100);
-            } else if (id === 'co') {
+            if (id === 'co') {
               percentage = Math.min((param.value / 5) * 100, 100);
             } else if (id === 'co2') {
               percentage = Math.min((param.value / 1000) * 100, 100);
-            } else if (id === 'no2') {
-              percentage = Math.min((param.value / 100) * 100, 100);
-            } else if (id === 'o3') {
-              percentage = Math.min((param.value / 100) * 100, 100);
             } else if (id === 'humidity') {
               percentage = Math.min(param.value, 100);
+            } else if (id === 'o3' || id === 'no2') {
+              percentage = Math.min((param.value / 200) * 100, 100);
+            } else if (id === 'pm10') {
+              percentage = Math.min((param.value / 150) * 100, 100);
+            } else if (id === 'pm25') {
+              percentage = Math.min((param.value / 75) * 100, 100);
             } else {
               percentage = Math.min((param.value / 100) * 100, 100);
             }
