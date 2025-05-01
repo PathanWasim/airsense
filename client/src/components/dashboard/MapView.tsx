@@ -139,7 +139,7 @@ export default function MapView({ selectedLocation, onLocationSelect }: MapViewP
         {isLoading ? (
           <Skeleton className="w-full h-[400px] rounded-lg" />
         ) : (
-          <div ref={mapContainerRef} className="w-full h-[400px] rounded-lg" />
+          <div ref={mapContainerRef} className="w-full h-[400px] rounded-lg relative" style={{ zIndex: 0 }} />
         )}
         <div className="mt-4 flex flex-wrap gap-2">
           {['good', 'moderate', 'poor', 'unhealthy'].map((level) => (
