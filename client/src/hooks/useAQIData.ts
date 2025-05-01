@@ -50,7 +50,9 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
 
       // Remove oldest anomaly if there are more than 5
       if (anomalyArray.length >= 5) {
-        const oldestAnomaly = anomalyArray.sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
+        // Sort anomalies by timestamp and get the oldest one
+        const sortedAnomalies = [...anomalyArray].sort((a, b) => a[1].timestamp - b[1].timestamp);
+        const oldestAnomaly = sortedAnomalies[0];
         if (oldestAnomaly) {
           await storage.removeAnomaly(oldestAnomaly[0]);
         }
@@ -59,6 +61,17 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
       // Add new anomaly
       const anomalyId = `anom${Date.now()}`;
       await storage.createAnomaly(anomalyId, anomalyData);
+
+      // Force update the UI by re-fetching anomalies
+      const updatedAnomalies = await storage.getAnomalies();
+      setData(prev => ({
+        ...prev,
+        anomalies: Object.entries(updatedAnomalies || {}).map(([id, anomaly]: [string, any]) => ({
+          id,
+          ...anomaly,
+          relativeTime: formatRelativeTime(anomaly.timestamp)
+        }))
+      }));
     };
 
     const unsubscribe = subscribeToData<any>('', (fbData) => {
