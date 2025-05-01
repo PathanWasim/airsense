@@ -48,6 +48,27 @@ export function updateData(path: string, data: any): Promise<void> {
   return update(dataRef, data);
 }
 
+export const storage = {
+  async getAnomalies() {
+    return new Promise((resolve, reject) => {
+      const anomaliesRef = ref(database, 'anomalies');
+      onValue(anomaliesRef, (snapshot) => {
+        resolve(snapshot.val());
+      }, (error) => {
+        reject(error);
+      });
+    });
+  },
+
+  async createAnomaly(id: string, data: any): Promise<void> {
+    return writeData(`/anomalies/${id}`, data);
+  },
+
+  async removeAnomaly(id: string): Promise<void> {
+    return writeData(`/anomalies/${id}`, null);
+  }
+};
+
 // Generate sample AQI data for Firebase
 export async function populateSampleData(): Promise<void> {
   const now = Date.now();

@@ -33,6 +33,32 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
   useEffect(() => {
     setData(prev => ({ ...prev, isLoading: true }));
     
+    const createAutomaticAlert = async (parameter: string, value: number, threshold: number) => {
+      const anomalies = await storage.getAnomalies();
+      const anomalyArray = Object.entries(anomalies || {});
+      
+      // Create new anomaly
+      const anomalyData = {
+        title: `High ${parameter} Alert`,
+        description: `${parameter} levels have exceeded the threshold (${threshold}). Current value: ${value}.`,
+        timestamp: Date.now(),
+        priority: "high",
+        zone: location
+      };
+      
+      // Remove oldest anomaly if there are more than 5
+      if (anomalyArray.length >= 5) {
+        const oldestAnomaly = anomalyArray.sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
+        if (oldestAnomaly) {
+          await storage.removeAnomaly(oldestAnomaly[0]);
+        }
+      }
+      
+      // Add new anomaly
+      const anomalyId = `anom${Date.now()}`;
+      await storage.createAnomaly(anomalyId, anomalyData);
+    };
+
     const unsubscribe = subscribeToData<any>('', (fbData) => {
       if (fbData) {
         try {
@@ -48,6 +74,16 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
               percentage = Math.min((param.value / 5) * 100, 100);
             } else if (id === 'co2') {
               percentage = Math.min((param.value / 1000) * 100, 100);
+              // Check CO₂ threshold
+              if (param.value > 750) {
+                createAutomaticAlert('CO₂', param.value, 750);
+              }
+            } else if (id === 'pm25') {
+              percentage = Math.min((param.value / 75) * 100, 100);
+              // Check PM2.5 threshold
+              if (param.value > 50) {
+                createAutomaticAlert('PM2.5', param.value, 50);
+              }
             } else if (id === 'temperature') {
               percentage = Math.min(((param.value - 10) / 30) * 100, 100);
             } else if (id === 'humidity') {
