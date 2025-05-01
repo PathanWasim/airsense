@@ -9,7 +9,9 @@ interface LiveAQIOverviewProps {
   selectedLocation: string;
 }
 
-export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewProps) {
+export default function LiveAQIOverview({
+  selectedLocation,
+}: LiveAQIOverviewProps) {
   const [parameters, setParameters] = useState<AQIParameter[]>([]);
   const [lastUpdated, setLastUpdated] = useState("Just now");
   const [isLoading, setIsLoading] = useState(true);
@@ -19,41 +21,50 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
     setIsLoading(true);
     setError(null);
 
-    const unsubscribe = subscribeToData<any>('parameters', (parametersData) => {
+    const unsubscribe = subscribeToData<any>("parameters", (parametersData) => {
       try {
         if (parametersData) {
-          const formattedParams = Object.entries(parametersData).map(([id, param]: [string, any]) => {
-            const level = getAQILevel(param.value);
-            let percentage = 0;
+          const formattedParams = Object.entries(parametersData).map(
+            ([id, param]: [string, any]) => {
+              const level = getAQILevel(param.value);
+              let percentage = 0;
 
-            if (id === 'co') {
-              percentage = Math.min((param.value / 5) * 100, 100);
-            } else if (id === 'co2') {
-              percentage = Math.min((param.value / 1000) * 100, 100);
-            } else if (id === 'humidity') {
-              percentage = Math.min(param.value, 100);
-            } else if (id === 'o3' || id === 'no2') {
-              percentage = Math.min((param.value / 200) * 100, 100);
-            } else if (id === 'pm10') {
-              percentage = Math.min((param.value / 150) * 100, 100);
-            } else if (id === 'pm25') {
-              percentage = Math.min((param.value / 75) * 100, 100);
-            } else {
-              percentage = Math.min((param.value / 100) * 100, 100);
-            }
+              if (id === "co") {
+                percentage = Math.min((param.value / 5) * 100, 100);
+                console.log(
+                  `${id} → Value: ${param.value}, Percentage: ${percentage}`,
+                );
+              } else if (id === "co2") {
+                percentage = Math.min((param.value / 1000) * 100, 100);
+              } else if (id === "humidity") {
+                percentage = Math.min(param.value, 100);
+              } else if (id === "o3" || id === "no2") {
+                percentage = Math.min((param.value / 200) * 100, 100);
+              } else if (id === "pm10") {
+                percentage = Math.min((param.value / 150) * 100, 100);
+              } else if (id === "pm25") {
+                percentage = Math.min((param.value / 75) * 100, 100);
+              } else {
+                percentage = Math.min((param.value / 100) * 100, 100);
+              }
 
-            return {
-              id,
-              name: id === 'pm25' ? 'PM2.5' : 
-                    id === 'pm10' ? 'PM10' : 
-                    id === 'co2' ? 'CO₂' : 
-                    id.charAt(0).toUpperCase() + id.slice(1),
-              value: param.value,
-              unit: param.unit,
-              level,
-              percentage
-            };
-          });
+              return {
+                id,
+                name:
+                  id === "pm25"
+                    ? "PM2.5"
+                    : id === "pm10"
+                      ? "PM10"
+                      : id === "co2"
+                        ? "CO₂"
+                        : id.charAt(0).toUpperCase() + id.slice(1),
+                value: param.value,
+                unit: param.unit,
+                level,
+                percentage,
+              };
+            },
+          );
 
           setParameters(formattedParams);
           setLastUpdated(formatRelativeTime(Date.now()));
@@ -90,7 +101,9 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
     return (
       <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
         <p className="text-red-600 dark:text-red-400">{error}</p>
-        <p className="text-sm text-red-500 dark:text-red-300 mt-1">Please try refreshing the page or check your connection.</p>
+        <p className="text-sm text-red-500 dark:text-red-300 mt-1">
+          Please try refreshing the page or check your connection.
+        </p>
       </div>
     );
   }
@@ -98,10 +111,14 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Live Air Quality Index</h2>
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+          Live Air Quality Index
+        </h2>
         <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
           <span className="material-icons text-xs mr-1">schedule</span>
-          <span>Last updated: <span className="font-mono">{lastUpdated}</span></span>
+          <span>
+            Last updated: <span className="font-mono">{lastUpdated}</span>
+          </span>
         </span>
       </div>
 
