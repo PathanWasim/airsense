@@ -87,11 +87,9 @@ export async function populateSampleData(): Promise<void> {
     },
     lastUpdated: now,
     locations: {
-      loc1: { name: 'Downtown', lat: 34.0522, lng: -118.2437, aqi: 63 },
-      loc2: { name: 'Westside', lat: 34.0211, lng: -118.4814, aqi: 42 },
-      loc3: { name: 'Eastside', lat: 34.0505, lng: -118.0836, aqi: 75 },
-      loc4: { name: 'North Valley', lat: 34.2364, lng: -118.5305, aqi: 38 },
-      loc5: { name: 'South Bay', lat: 33.8847, lng: -118.4109, aqi: 51 }
+      sensor1: { name: 'City Center', lat: 51.5074, lng: -0.1278, aqi: 85 },
+      sensor2: { name: 'Industrial Zone', lat: 51.4934, lng: -0.1563, aqi: 120 },
+      sensor3: { name: 'Residential Area', lat: 51.5226, lng: -0.1058, aqi: 45 }
     },
     forecast: {
       hourly: {
