@@ -45,7 +45,7 @@ export default function AQICard({ parameter }: AQICardProps) {
           <div className="relative pt-1">
             <div className="overflow-hidden h-3 mb-4 text-xs flex rounded bg-gray-200 dark:bg-gray-700">
               <div 
-                style={{ width: `${parameter.percentage}%` }} 
+                style={{ width: `${parameter.value}%` }} 
                 className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-300 ${getAQIBarColor(parameter.level as any)}`}
               ></div>
             </div>
