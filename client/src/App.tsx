@@ -15,6 +15,8 @@ import MobileHeader from "@/components/layout/MobileHeader";
 import Footer from "@/components/layout/Footer";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import DataInitializer from "@/components/DataInitializer";
+import 'leaflet/dist/leaflet.css';
+
 
 function Router() {
   return (
