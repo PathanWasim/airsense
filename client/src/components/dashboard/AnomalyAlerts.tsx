@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { subscribeToData, updateData } from "@/lib/firebase";
+import { subscribeToData } from "@/lib/firebase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Anomaly } from "@/types/index";
@@ -31,19 +32,17 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
 
           // Sort by timestamp (most recent first)
           formattedAnomalies.sort((a, b) => b.timestamp - a.timestamp);
-
           setAnomalies(formattedAnomalies);
         } catch (error) {
           console.error("Error processing anomalies data:", error);
-        } finally {
-          setIsLoading(false);
         }
+        setIsLoading(false);
+      } else {
+        setIsLoading(false);
       }
     });
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [selectedLocation]);
 
   // Function to get appropriate icon and color based on priority
@@ -82,7 +81,6 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
     }
   };
 
-  // Function to get text for priority
   const getPriorityText = (priority: string) => {
     switch (priority) {
       case "high":
@@ -132,7 +130,6 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
     );
   }
 
-  // Count active (non-resolved) anomalies
   const activeAnomalies = anomalies.filter(a => a.priority !== "resolved").length;
 
   return (
@@ -153,7 +150,6 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
         ) : (
           anomalies.map((anomaly) => {
             const styles = getAnomalyStyles(anomaly.priority);
-
             return (
               <div key={anomaly.id} className="p-4 hover:scale-[1.01] transition-transform duration-200">
                 <div className="flex items-start">
