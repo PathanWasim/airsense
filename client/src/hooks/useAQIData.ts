@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { subscribeToData } from '@/lib/firebase';
 import { AQIParameter, SensorLocation, ForecastItem, DayForecast, Anomaly } from '@/types/index';
 import { getAQILevel, formatRelativeTime } from '@/lib/utils';
+import { storage } from '@/lib/firebase';
+
 
 interface UseAQIDataOptions {
   location: string;
