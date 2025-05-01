@@ -32,10 +32,12 @@ export default function LiveAQIOverview({ selectedLocation }: LiveAQIOverviewPro
               percentage = Math.min((param.value / 5) * 100, 100);
             } else if (id === 'co2') {
               percentage = Math.min((param.value / 1000) * 100, 100);
-            } else if (id === 'temperature') {
-              percentage = Math.min(((param.value - 10) / 30) * 100, 100);
+            } else if (id === 'no2') {
+              percentage = Math.min((param.value / 100) * 100, 100);
+            } else if (id === 'o3') {
+              percentage = Math.min((param.value / 100) * 100, 100);
             } else if (id === 'humidity') {
-              percentage = param.value;
+              percentage = Math.min(param.value, 100);
             } else {
               percentage = Math.min((param.value / 100) * 100, 100);
             }
