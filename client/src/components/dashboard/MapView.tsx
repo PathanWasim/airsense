@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { subscribeToData } from "@/lib/firebase";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,14 +18,36 @@ export default function MapView({ selectedLocation, onLocationSelect }: MapViewP
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setIsLoading(true);
+    // Add Leaflet CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+    document.head.appendChild(link);
 
+    // Add Leaflet JS
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
+    script.onload = () => {
+      setIsLoading(true);
+      loadMapData();
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(link);
+      document.head.removeChild(script);
+      if (mapRef.current) {
+        mapRef.current.remove();
+      }
+    };
+  }, []);
+
+  const loadMapData = () => {
     const unsubscribe = subscribeToData<any>('locations', (data) => {
       if (data) {
         try {
           const formattedLocations = Object.entries(data).map(([id, loc]: [string, any]) => {
             const level = getAQILevel(loc.aqi);
-
             return {
               id,
               name: loc.name,
@@ -37,7 +60,6 @@ export default function MapView({ selectedLocation, onLocationSelect }: MapViewP
 
           setLocations(formattedLocations);
           setIsLoading(false);
-
           initMap(formattedLocations);
         } catch (error) {
           console.error("Error processing location data:", error);
@@ -46,79 +68,69 @@ export default function MapView({ selectedLocation, onLocationSelect }: MapViewP
       }
     });
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  const initMap = (locations: SensorLocation[]) => {
-    if (!mapContainerRef.current) return;
-
-    if (typeof window.L !== 'undefined') {
-      if (mapRef.current) {
-        mapRef.current.remove();
-      }
-
-      const defaultLat = locations.length > 0 ? locations[0].lat : 51.5074;
-      const defaultLng = locations.length > 0 ? locations[0].lng : -0.1278;
-
-      const map = window.L.map(mapContainerRef.current).setView([defaultLat, defaultLng], 13);
-      mapRef.current = map;
-
-      const isDark = document.documentElement.classList.contains('dark');
-      const tileLayer = isDark 
-        ? window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png')
-        : window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-
-      tileLayer.addTo(map);
-
-      locations.forEach(loc => {
-        const color = loc.level === 'good' ? '#10B981' 
-                   : loc.level === 'moderate' ? '#FBBF24'
-                   : loc.level === 'poor' ? '#F97316'
-                   : loc.level === 'unhealthy' ? '#EF4444'
-                   : loc.level === 'hazardous' ? '#991B1B'
-                   : '#9CA3AF';
-
-        const marker = window.L.circleMarker([loc.lat, loc.lng], {
-          radius: 12,
-          fillColor: color,
-          color: '#fff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.8
-        }).addTo(map);
-
-        const popup = window.L.popup({
-          maxWidth: 220,
-          className: 'custom-popup'
-        }).setContent(`
-          <div class="p-2">
-            <h3 class="font-semibold">${loc.name}</h3>
-            <div class="mt-1">
-              <span class="font-medium">AQI: ${loc.aqi}</span>
-              <br/>
-              <span class="text-sm">Status: ${getAQILevelText(loc.level)}</span>
-            </div>
-          </div>
-        `);
-
-        marker.bindPopup(popup);
-
-        if (onLocationSelect) {
-          marker.on('click', () => {
-            onLocationSelect(loc.name);
-          });
-        }
-      });
-    }
+    return unsubscribe;
   };
 
-  declare global {
-    interface Window {
-      L: any;
+  const initMap = (locations: SensorLocation[]) => {
+    if (!mapContainerRef.current || !window.L) return;
+
+    if (mapRef.current) {
+      mapRef.current.remove();
     }
-  }
+
+    const defaultLat = locations.length > 0 ? locations[0].lat : 51.5074;
+    const defaultLng = locations.length > 0 ? locations[0].lng : -0.1278;
+
+    const map = window.L.map(mapContainerRef.current).setView([defaultLat, defaultLng], 13);
+    mapRef.current = map;
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const tileLayer = isDark 
+      ? window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png')
+      : window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+    tileLayer.addTo(map);
+
+    locations.forEach(loc => {
+      const color = loc.level === 'good' ? '#10B981' 
+                 : loc.level === 'moderate' ? '#FBBF24'
+                 : loc.level === 'poor' ? '#F97316'
+                 : loc.level === 'unhealthy' ? '#EF4444'
+                 : loc.level === 'hazardous' ? '#991B1B'
+                 : '#9CA3AF';
+
+      const marker = window.L.circleMarker([loc.lat, loc.lng], {
+        radius: 12,
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+      }).addTo(map);
+
+      const popup = window.L.popup({
+        maxWidth: 220,
+        className: 'custom-popup'
+      }).setContent(`
+        <div class="p-2">
+          <h3 class="font-semibold">${loc.name}</h3>
+          <div class="mt-1">
+            <span class="font-medium">AQI: ${loc.aqi}</span>
+            <br/>
+            <span class="text-sm">Status: ${getAQILevelText(loc.level)}</span>
+          </div>
+        </div>
+      `);
+
+      marker.bindPopup(popup);
+
+      if (onLocationSelect) {
+        marker.on('click', () => {
+          onLocationSelect(loc.name);
+        });
+      }
+    });
+  };
 
   return (
     <Card className="overflow-hidden">
