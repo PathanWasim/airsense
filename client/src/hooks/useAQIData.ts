@@ -75,8 +75,8 @@ export function useAQIData({ location }: UseAQIDataOptions): AQIDataResult {
             } else if (id === 'co2') {
               percentage = Math.min((param.value / 1000) * 100, 100);
               // Check CO₂ threshold
-              if (param.value > 750) {
-                createAutomaticAlert('CO₂', param.value, 750);
+              if (param.value > 700) {
+                createAutomaticAlert('CO₂', param.value, 700);
               }
             } else if (id === 'pm25') {
               percentage = Math.min((param.value / 75) * 100, 100);
