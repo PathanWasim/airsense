@@ -66,9 +66,9 @@ export default function AnomalyAlerts({ selectedLocation }: AnomalyAlertsProps) 
           formattedAnomalies.sort((a, b) => b.timestamp - a.timestamp);
           
           setAnomalies(formattedAnomalies);
-          setIsLoading(false);
         } catch (error) {
           console.error("Error processing anomalies data:", error);
+        } finally {
           setIsLoading(false);
         }
       }
