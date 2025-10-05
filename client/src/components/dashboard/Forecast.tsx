@@ -8,6 +8,7 @@ import { getAQILevel, getAQIColor, getAQILevelText } from "@/lib/utils";
 interface ForecastProps {
   selectedLocation: string;
 }
+let max = 0;
 
 export default function Forecast({ selectedLocation }: ForecastProps) {
   const [sixHourForecast, setSixHourForecast] = useState<ForecastItem[]>([]);
@@ -17,7 +18,7 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
 
   useEffect(() => {
     setIsLoading(true);
-    
+
     const unsubscribe = subscribeToData<any>('forecast', (data) => {
       if (data) {
         try {
@@ -34,10 +35,12 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
                 relativeTime: id === "0" ? "Now" : `+${id}h`
               };
             });
-            
+
+            max = Math.max(...data.hourly.map((item: any) => item.aqi));
+
             setSixHourForecast(hourlyForecast);
           }
-          
+
           // Process 3-day forecast
           if (data.daily) {
             const dailyForecast = Object.entries(data.daily).map(([id, item]: [string, any]) => {
@@ -46,19 +49,19 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
                 id,
                 day: item.day,
                 weather: item.weather,
-                weatherIcon: item.weather === "Sunny" ? "wb_sunny" : 
-                            item.weather === "Cloudy" ? "cloud" : 
-                            item.weather === "Rainy" ? "grain" : 
-                            "cloud",
+                weatherIcon: item.weather === "Sunny" ? "wb_sunny" :
+                  item.weather === "Cloudy" ? "cloud" :
+                    item.weather === "Rainy" ? "grain" :
+                      "cloud",
                 temperature: item.temperature,
                 aqi: item.aqi,
                 level
               };
             });
-            
+
             setThreeDayForecast(dailyForecast);
           }
-          
+
           // Set AI recommendation
           if (data.recommendation) {
             setAiRecommendation(data.recommendation);
@@ -67,17 +70,17 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
             try {
               // Import just when needed to avoid potential early initialization issues
               const { generateAirQualityRecommendation } = require('@/lib/openai');
-              
+
               // Get parameters for AI recommendation
               const aqi = data.daily && data.daily["0"] ? data.daily["0"].aqi : 50;
               const parameters = [];
-              
+
               if (Object.keys(data.parameters || {}).length > 0) {
                 Object.entries(data.parameters).forEach(([id, param]: [string, any]) => {
                   parameters.push({
-                    name: id === 'pm25' ? 'PM2.5' : 
-                          id === 'pm10' ? 'PM10' : 
-                          id === 'co2' ? 'CO₂' : 
+                    name: id === 'pm25' ? 'PM2.5' :
+                      id === 'pm10' ? 'PM10' :
+                        id === 'co2' ? 'CO₂' :
                           id.charAt(0).toUpperCase() + id.slice(1),
                     value: param.value,
                     unit: param.unit
@@ -87,18 +90,18 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
                 // Add some default parameter if none are available
                 parameters.push({ name: 'PM2.5', value: 35, unit: 'μg/m³' });
               }
-              
+
               // Generate recommendation asynchronously
               generateAirQualityRecommendation(selectedLocation, aqi, parameters)
-                .then((aiRecommendation) => {
+                .then((aiRecommendation: any) => {
                   setAiRecommendation(aiRecommendation);
                 })
-                .catch((error) => {
+                .catch((error: any) => {
                   console.error('Error generating AI recommendation:', error);
                   // Fallback recommendation
                   const todayLevel = getAQILevel(aqi);
                   let fallbackRecommendation = "Air quality is expected to be good today. Enjoy outdoor activities!";
-                  
+
                   if (todayLevel === "moderate") {
                     fallbackRecommendation = "Air quality is expected to remain moderate throughout the day. Consider keeping windows closed during peak traffic hours.";
                   } else if (todayLevel === "poor") {
@@ -106,17 +109,17 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
                   } else if (todayLevel === "unhealthy" || todayLevel === "hazardous") {
                     fallbackRecommendation = "Air quality is expected to be unhealthy today. Avoid outdoor activities and keep windows closed. Consider using air purifiers indoors.";
                   }
-                  
-                  setAiRecommendation(fallbackRecommendation);
+
+                  setAiRecommendation(getAdviceBasedOnAQI(max));
                 });
             } catch (error) {
               console.error('Error initializing AI recommendation:', error);
               // Fallback to simple recommendation
               const todayAQI = data.daily && data.daily["0"] ? data.daily["0"].aqi : 50;
               const todayLevel = getAQILevel(todayAQI);
-              
+
               let recommendation = "Air quality is expected to be good today. Enjoy outdoor activities!";
-              
+
               if (todayLevel === "moderate") {
                 recommendation = "Air quality is expected to remain moderate throughout the day. Consider keeping windows closed during peak traffic hours.";
               } else if (todayLevel === "poor") {
@@ -124,11 +127,11 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
               } else if (todayLevel === "unhealthy" || todayLevel === "hazardous") {
                 recommendation = "Air quality is expected to be unhealthy today. Avoid outdoor activities and keep windows closed. Consider using air purifiers indoors.";
               }
-              
-              setAiRecommendation(recommendation);
+
+              setAiRecommendation(getAdviceBasedOnAQI(max));
             }
           }
-          
+
           setIsLoading(false);
         } catch (error) {
           console.error("Error processing forecast data:", error);
@@ -136,7 +139,7 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
         }
       }
     });
-    
+
     return () => {
       unsubscribe();
     };
@@ -157,6 +160,22 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
     );
   }
 
+  function getAdviceBasedOnAQI(aqi: number): string {
+    if (aqi <= 50) {
+      return "Air quality is good. Ideal for outdoor activities.";
+    } else if (aqi <= 100) {
+      return "Air quality is moderate. Consider reducing prolonged outdoor exertion if you're sensitive to pollution.";
+    } else if (aqi <= 150) {
+      return "Air quality is unhealthy for sensitive groups. People with respiratory conditions should limit outdoor activity.";
+    } else if (aqi <= 200) {
+      return "Air quality is unhealthy. Everyone should reduce prolonged outdoor exertion.";
+    } else if (aqi <= 300) {
+      return "Air quality is very unhealthy. Avoid outdoor activities. If possible, stay indoors and use air purifiers.";
+    } else {
+      return "Air quality is hazardous. Avoid all outdoor activities. Stay indoors with air purifiers running.";
+    }
+  }
+
   return (
     <Card className="overflow-hidden">
       <div className="p-4 border-b dark:border-gray-700">
@@ -172,7 +191,7 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-4">
           {/* 6 Hour Forecast */}
           <div className="border-b dark:border-gray-700 pb-4">
@@ -189,7 +208,7 @@ export default function Forecast({ selectedLocation }: ForecastProps) {
               ))}
             </div>
           </div>
-          
+
           {/* 3 Day Forecast */}
           <div>
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">3 Day Forecast</h3>

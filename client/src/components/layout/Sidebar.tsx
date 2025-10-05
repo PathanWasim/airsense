@@ -20,8 +20,8 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }: SidebarProps) {
       </div>
       
       <nav className="flex-1 py-4 px-2">
-        <Link href="/">
-          <a className={`flex items-center px-4 py-3 mb-2 rounded-lg ${location === "/" ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"}`}>
+        <Link href="/home">
+          <a className={`flex items-center px-4 py-3 mb-2 rounded-lg ${location === "/home" ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"}`}>
             <span className="material-icons mr-3">dashboard</span>
             <span>Home</span>
           </a>

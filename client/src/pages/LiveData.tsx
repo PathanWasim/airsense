@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState , useEffect } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import LiveAQIOverview from "@/components/dashboard/LiveAQIOverview";
 import RealTimeGraphs from "@/components/dashboard/RealTimeGraphs";
-import MapView from "@/components/dashboard/MapView";
+import { MapView } from "@/components/dashboard/MapView";
 import { useToast } from "@/hooks/use-toast";
+import { subscribeToData } from "@/lib/firebase";
 
 export default function LiveData() {
   const [selectedLocation, setSelectedLocation] = useState("Downtown");
+  const [sensorLocations, setSensorLocations] = useState<any>([]);
   const { toast } = useToast();
 
   const handleLocationChange = (location: string) => {
@@ -26,6 +28,20 @@ export default function LiveData() {
     });
   };
 
+   useEffect(() => {
+  
+      const unsubscribeLocations = subscribeToData("sensorLocations", (data) => {
+        console.log("Sensor locations received:", data);
+        setSensorLocations(data || []);
+      });
+  
+      // Clean up
+      return () => {
+       
+        unsubscribeLocations();
+      };
+    }, []);
+
   return (
     <>
       <PageHeader 
@@ -41,10 +57,7 @@ export default function LiveData() {
       <RealTimeGraphs selectedLocation={selectedLocation} />
       
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-        <MapView 
-          selectedLocation={selectedLocation} 
-          onLocationSelect={handleLocationChange}
-        />
+      <MapView locations={sensorLocations} />
       </div>
     </>
   );

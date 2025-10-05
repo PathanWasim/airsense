@@ -1,9 +1,9 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, DataSnapshot, set, update } from "firebase/database";
+import { getDatabase, ref, onValue, DataSnapshot, set, update, push ,get } from "firebase/database";
 import { FirebaseAQIData } from "@/types";
 
 // Firebase configuration 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyDW-HrDIzPr3IBl5mp5-HocT440px65LP4",
   authDomain: "airsense-9c60e.firebaseapp.com",
   databaseURL: "https://airsense-9c60e-default-rtdb.firebaseio.com",
@@ -17,6 +17,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+
 
 // Subscribe to data at a specific path
 export function subscribeToData<T>(
@@ -35,6 +36,133 @@ export function subscribeToData<T>(
   
   return unsubscribe;
 }
+
+
+// Thresholds for automatic anomaly detection
+export const THRESHOLDS = {
+  pm25: 100, // μg/m³
+  co2: 1000,  // ppm
+  co: 30,     // ppm
+  temperature: 35, // °C
+  humidity: 85, // %
+};
+
+// Function to check for anomalies in live data
+export const checkForAnomalies = async (liveData: any) => {
+  if (!liveData) return;
+  
+  console.log("Checking for anomalies with thresholds:", THRESHOLDS);
+  console.log("Current values:", {
+    pm25: liveData.pm25.value,
+    co2: liveData.co2.value,
+    co: liveData.co.value,
+    temperature: liveData.temperature.value,
+    humidity: liveData.humidity.value
+  });
+  
+  const anomalies = [];
+  
+  // Check PM2.5
+  if (liveData.pm25.value > THRESHOLDS.pm25) {
+    console.log(`PM2.5 anomaly detected: ${liveData.pm25.value} > ${THRESHOLDS.pm25}`);
+    anomalies.push({
+      title: 'High PM2.5 Level', 
+      priority: 'high',
+      zone: 'Downtown',
+      timestamp: new Date().toISOString(),
+      description: `PM2.5 level (${liveData.pm25.value} μg/m³) has exceeded the threshold of ${THRESHOLDS.pm25} μg/m³.`,
+    });
+  }
+  
+  // Check CO2
+  if (liveData.co2.value > THRESHOLDS.co2) {
+    console.log(`CO2 anomaly detected: ${liveData.co2.value} > ${THRESHOLDS.co2}`);
+    anomalies.push({
+      
+      timestamp: new Date().toISOString(),
+      title: 'High CO2 Level', 
+      priority: 'high',
+      zone: 'Downtown',
+      description: `CO₂ level (${liveData.co2.value} ppm) has exceeded the threshold of ${THRESHOLDS.co2} ppm.`,
+    });
+  }
+  
+  // Check CO
+  if (liveData.co.value > THRESHOLDS.co) {
+    console.log(`CO anomaly detected: ${liveData.co.value} > ${THRESHOLDS.co}`);
+    anomalies.push({
+      
+      timestamp: new Date().toISOString(),
+      title: 'High CO Level', 
+      priority: 'high',
+      zone: 'Downtown',
+      description: `CO level (${liveData.co.value} ppm) has exceeded the threshold of ${THRESHOLDS.co} ppm.`,
+    });
+  }
+
+  // Check Temperature
+  if (liveData.temperature.value > THRESHOLDS.temperature) {
+    console.log(`Temperature anomaly detected: ${liveData.temperature.value} > ${THRESHOLDS.temperature}`);
+    anomalies.push({
+     
+      timestamp: new Date().toISOString(),
+      title: 'High Temparature', 
+      priority: 'high',
+      zone: 'Downtown',
+      description: `Temperature (${liveData.temperature.value}°C) has exceeded the threshold of ${THRESHOLDS.temperature}°C.`,
+    });
+  }
+
+  // Check Humidity
+  if (liveData.humidity.value > THRESHOLDS.humidity) {
+    console.log(`Humidity anomaly detected: ${liveData.humidity.value} > ${THRESHOLDS.humidity}`);
+    anomalies.push({
+      
+      timestamp: new Date().toISOString(),
+      title: 'High Humidity', 
+      priority: 'high',
+      zone: 'Downtown',
+      description: `Humidity (${liveData.humidity.value}%) has exceeded the threshold of ${THRESHOLDS.humidity}%.`,
+    });
+  }
+
+  // If anomalies detected, add them to Firebase
+  for (const anomaly of anomalies) {
+    await addAnomaly(anomaly);
+  }
+  
+  return anomalies.length > 0 ? anomalies : null;
+};
+
+// Function to add a new anomaly and maintain maximum of 10 anomalies (removing oldest)
+export const addAnomaly = async (anomaly: any) => {
+  try {
+    const anomaliesRef = ref(database, 'anomalies');
+    const snapshot = await get(anomaliesRef);
+    const existingAnomalies = snapshot.val() || [];
+    
+    // Add new anomaly at the beginning
+    const newAnomalies = [anomaly, ...existingAnomalies];
+    
+    // Keep only the 10 most recent anomalies
+    if (newAnomalies.length > 10) {
+      newAnomalies.length = 10;
+    }
+    
+    console.log("Updated anomalies:", newAnomalies);
+    
+    // Update Firebase
+    await set(anomaliesRef, newAnomalies);
+    return true;
+  } catch (error) {
+    console.error("Error adding anomaly:", error);
+    return false;
+  }
+};
+
+
+
+
 
 // Write data to Firebase at a specific path
 export function writeData(path: string, data: any): Promise<void> {
@@ -110,28 +238,28 @@ export async function populateSampleData(): Promise<void> {
       }
     },
     anomalies: {
-      anom1: { 
+      0: { 
         title: 'Sudden PM2.5 Spike', 
         description: 'Unexpected increase in PM2.5 levels detected in Downtown area. Possible causes include traffic congestion or construction activity.',
         timestamp: now - 1800000, 
         priority: 'high',
         zone: 'Downtown'
       },
-      anom2: { 
+      1: { 
         title: 'CO₂ Threshold Warning', 
         description: 'CO₂ levels trending upward in Westside industrial zone. Approaching regulatory threshold limits.',
         timestamp: now - 3600000, 
         priority: 'medium',
         zone: 'Westside'
       },
-      anom3: { 
+      2: { 
         title: 'Sensor Malfunction', 
         description: 'Temperature sensor at North Valley station reporting inconsistent values. Scheduled for maintenance.',
         timestamp: now - 86400000, 
         priority: 'low',
         zone: 'North Valley'
       },
-      anom4: { 
+      3: { 
         title: 'Calibration Complete', 
         description: 'All sensors in Eastside monitoring station have been successfully calibrated.',
         timestamp: now - 172800000, 
@@ -161,11 +289,43 @@ export async function populateSampleData(): Promise<void> {
         type: 'Incident Report',
         fileType: 'PDF'
       }
+    },
+    anomalyAudit: {
+      auditId: {
+        lastAlert: now,
+        count: 0,
+        currentStatus: 'active'
+      },
+      timestamp: {
+        lastAlert: now,
+        count: 0,
+        currentStatus: 'active'
+      },
+      description: {
+        lastAlert: now,
+        count: 0,
+        currentStatus: 'active'
+      }
     }
   };
+
+  const randomNum = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const sensorLocations = [
+    { id: "sensor1", name: "Main Entrance", lat: 37.7749, lng: -122.4194, aqi: randomNum(30, 150) },
+    { id: "sensor2", name: "Production Zone", lat: 37.7848, lng: -122.4294, aqi: randomNum(30, 150) },
+    { id: "sensor3", name: "Office Area", lat: 37.7649, lng: -122.4094, aqi: randomNum(30, 150) },
+    { id: "sensor4", name: "Warehouse", lat: 37.7549, lng: -122.4494, aqi: randomNum(30, 150) },
+    { id: "sensor5", name: "Outdoor", lat: 37.7949, lng: -122.3994, aqi: randomNum(30, 150) }
+  ];
+
+
+
+
   
   try {
     await writeData('/', sampleData);
+    await set(ref(database, 'sensorLocations'), sensorLocations);
     console.log('Sample data successfully populated in Firebase!');
     return Promise.resolve();
   } catch (error) {
@@ -173,5 +333,22 @@ export async function populateSampleData(): Promise<void> {
     return Promise.reject(error);
   }
 }
+
+
+export const getAqiCategory = (aqi: number): { label: string, className: string } => {
+  if (aqi <= 50) {
+    return { label: "Good", className: "aqi-badge-good" };
+  } else if (aqi <= 100) {
+    return { label: "Moderate", className: "aqi-badge-moderate" };
+  } else if (aqi <= 150) {
+    return { label: "Unhealthy for Sensitive Groups", className: "aqi-badge-unhealthy" };
+  } else if (aqi <= 200) {
+    return { label: "Unhealthy", className: "aqi-badge-unhealthy" };
+  } else if (aqi <= 300) {
+    return { label: "Very Unhealthy", className: "aqi-badge-very-unhealthy" };
+  } else {
+    return { label: "Hazardous", className: "aqi-badge-hazardous" };
+  }
+};
 
 export { database };

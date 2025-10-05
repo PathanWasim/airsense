@@ -131,11 +131,8 @@ export async function getAirQualityResponse(request: AirQualityRequest): Promise
 /**
  * Generate air quality recommendations based on current data
  */
-export async function generateAirQualityRecommendation(
-  location: string, 
-  aqi: number,
-  parameters: Array<{ name: string; value: number; unit: string }>
-): Promise<string> {
+export const generateAirQualityRecommendation = async (location: string, aqi: number, parameters: any[]) => {
+
   try {
     // Get AQI level for recommendation
     const getAQILevel = (value: number) => {
@@ -180,5 +177,4 @@ export async function generateAirQualityRecommendation(
     return "Unable to generate recommendations at this time. Please check back later.";
   }
 }
-
 // No default export needed for this implementation

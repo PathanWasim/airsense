@@ -34,6 +34,7 @@ export interface ForecastItem {
 }
 
 export interface DayForecast {
+  id: string;
   day: string;
   weather: string;
   weatherIcon: string;
@@ -128,3 +129,5 @@ export interface FirebaseAQIData {
     }
   };
 }
+
+export type AQILevel = "good" | "moderate" | "poor" | "unhealthy";

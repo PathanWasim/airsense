@@ -36,34 +36,34 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
     const locationsSub = subscribeToData<any>('locations', (locationsData) => {
       if (locationsData) {
         // Find the matching location to get overall AQI
-        const foundLocation = Object.values(locationsData).find((loc: any) => 
+        const foundLocation = Object.values(locationsData).find((loc: any) =>
           loc.name === selectedLocation
         );
-        
+
         // Get parameters data separately
         const paramsSub = subscribeToData<any>('parameters', (parametersData) => {
           if (parametersData) {
             // Format parameters
             const formattedParams = Object.entries(parametersData).map(([id, param]: [string, any]) => ({
-              name: id === 'pm25' ? 'PM2.5' : 
-                    id === 'pm10' ? 'PM10' : 
-                    id === 'co2' ? 'CO₂' : 
+              name: id === 'pm25' ? 'PM2.5' :
+                id === 'pm10' ? 'PM10' :
+                  id === 'co2' ? 'CO₂' :
                     id.charAt(0).toUpperCase() + id.slice(1),
               value: param.value,
               unit: param.unit
             }));
-            
+
             setAqiData({
-              aqi: foundLocation?.aqi || 63,
+              aqi: (foundLocation as any)?.aqi || 63,
               parameters: formattedParams
             });
           }
         });
-        
+
         return () => paramsSub();
       }
     });
-    
+
     return () => locationsSub();
   }, [selectedLocation]);
 
@@ -77,9 +77,9 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!inputMessage.trim()) return;
-    
+
     // Add user message
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -87,11 +87,11 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
       message: inputMessage,
       timestamp: Date.now()
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
     setIsTyping(true);
-    
+
     try {
       // Get AI response using Google's Gemini
       const response = await getAirQualityResponse({
@@ -99,18 +99,18 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
         location: selectedLocation,
         airQualityData: aqiData || undefined
       });
-      
+
       const aiMessage: ChatMessage = {
         id: `ai-${Date.now()}`,
         sender: "ai",
         message: response.message,
         timestamp: Date.now()
       };
-      
+
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error getting AI response:", error);
-      
+
       // Fallback response
       const errorMessage: ChatMessage = {
         id: `ai-error-${Date.now()}`,
@@ -118,7 +118,7 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
         message: "I'm sorry, I couldn't process your request at the moment. Please try again later.",
         timestamp: Date.now()
       };
-      
+
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
@@ -174,7 +174,7 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
             )}
           </div>
         ))}
-        
+
         {isTyping && (
           <div className="flex items-start">
             <div className="flex-shrink-0">
@@ -191,10 +191,10 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
-      
+
       <div className="p-4 border-t dark:border-gray-700">
         <form onSubmit={handleSendMessage} className="flex items-center">
           <Input
@@ -205,8 +205,8 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
             onChange={(e) => setInputMessage(e.target.value)}
             className="flex-1 rounded-l-md"
           />
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="inline-flex items-center px-4 py-2 rounded-r-md"
           >
             <span className="material-icons text-sm mr-1">send</span>
@@ -214,49 +214,49 @@ export default function AIAssistant({ selectedLocation }: AIAssistantProps) {
           </Button>
         </form>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button 
+          <button
             onClick={() => handleQuickQuestion("What is the AQI now?")}
             className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
           >
             What is the AQI now?
           </button>
-          <button 
+          <button
             onClick={() => handleQuickQuestion("Is it safe to exercise outdoors?")}
             className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
           >
             Is it safe to exercise outdoors?
           </button>
-          <button 
+          <button
             onClick={() => handleQuickQuestion("Show air quality forecast")}
             className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
           >
             Show air quality forecast
           </button>
-          <button 
+          <button
             onClick={() => handleQuickQuestion("What are the main pollutants today?")}
             className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
           >
             What are the main pollutants today?
           </button>
-          <button 
+          <button
             onClick={() => handleQuickQuestion("How do I protect my family from pollution?")}
             className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
           >
             How do I protect my family?
           </button>
-          <button 
+          <button
             onClick={() => handleQuickQuestion("What are the health risks of current air quality?")}
             className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
           >
             Health risks today
           </button>
-          <button 
+          <button
             onClick={() => handleQuickQuestion("Compare air quality with other areas")}
             className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
           >
             Compare with other areas
           </button>
-          <button 
+          <button
             onClick={() => handleQuickQuestion("What causes air pollution here?")}
             className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1 px-2 rounded-full"
           >

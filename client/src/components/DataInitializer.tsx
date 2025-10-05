@@ -69,14 +69,14 @@ export default function DataInitializer() {
               Sample air quality data is loaded and available
             </p>
           </div>
-          <Button
+          {/* <Button
             variant="outline"
             size="sm"
             onClick={resetData}
             disabled={isInitializing}
           >
             {isInitializing ? 'Refreshing...' : 'Refresh Data'}
-          </Button>
+          </Button> */}
         </div>
       </div>
     );
