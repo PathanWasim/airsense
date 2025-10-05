@@ -70,7 +70,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { location, temperature, humidity, wind_speed, pressure } = req.body;
 
       // Call Python AI forecasting service
-      const forecastResponse = await fetch('http://localhost:5002/forecast', {
+      const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5002';
+      const forecastResponse = await fetch(`${AI_SERVICE_URL}/forecast`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

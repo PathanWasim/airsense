@@ -1,17 +1,17 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, DataSnapshot, set, update, push ,get } from "firebase/database";
+import { getDatabase, ref, onValue, DataSnapshot, set, update, push, get } from "firebase/database";
 import { FirebaseAQIData } from "@/types";
 
 // Firebase configuration 
 export const firebaseConfig = {
-  apiKey: "AIzaSyDW-HrDIzPr3IBl5mp5-HocT440px65LP4",
-  authDomain: "airsense-9c60e.firebaseapp.com",
-  databaseURL: "https://airsense-9c60e-default-rtdb.firebaseio.com",
-  projectId: "airsense-9c60e",
-  storageBucket: "airsense-9c60e.firebasestorage.app",
-  messagingSenderId: "518053970342",
-  appId: "1:518053970342:web:1fec621c6581bd6f898f67",
-  measurementId: "G-6HT7SMHLHB"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN || "airsense-9c60e.firebaseapp.com",
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || process.env.FIREBASE_DATABASE_URL || "https://airsense-9c60e-default-rtdb.firebaseio.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || "airsense-9c60e",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET || "airsense-9c60e.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID || "518053970342",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID || "1:518053970342:web:1fec621c6581bd6f898f67",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || process.env.FIREBASE_MEASUREMENT_ID || "G-6HT7SMHLHB"
 };
 
 // Initialize Firebase
@@ -21,11 +21,11 @@ const database = getDatabase(app);
 
 // Subscribe to data at a specific path
 export function subscribeToData<T>(
-  path: string, 
+  path: string,
   callback: (data: T | null) => void
 ): () => void {
   const dataRef = ref(database, path);
-  
+
   const unsubscribe = onValue(dataRef, (snapshot: DataSnapshot) => {
     const data = snapshot.val() as T | null;
     callback(data);
@@ -33,7 +33,7 @@ export function subscribeToData<T>(
     console.error("Error subscribing to data:", error);
     callback(null);
   });
-  
+
   return unsubscribe;
 }
 
@@ -50,7 +50,7 @@ export const THRESHOLDS = {
 // Function to check for anomalies in live data
 export const checkForAnomalies = async (liveData: any) => {
   if (!liveData) return;
-  
+
   console.log("Checking for anomalies with thresholds:", THRESHOLDS);
   console.log("Current values:", {
     pm25: liveData.pm25.value,
@@ -59,41 +59,41 @@ export const checkForAnomalies = async (liveData: any) => {
     temperature: liveData.temperature.value,
     humidity: liveData.humidity.value
   });
-  
+
   const anomalies = [];
-  
+
   // Check PM2.5
   if (liveData.pm25.value > THRESHOLDS.pm25) {
     console.log(`PM2.5 anomaly detected: ${liveData.pm25.value} > ${THRESHOLDS.pm25}`);
     anomalies.push({
-      title: 'High PM2.5 Level', 
+      title: 'High PM2.5 Level',
       priority: 'high',
       zone: 'Downtown',
       timestamp: new Date().toISOString(),
       description: `PM2.5 level (${liveData.pm25.value} μg/m³) has exceeded the threshold of ${THRESHOLDS.pm25} μg/m³.`,
     });
   }
-  
+
   // Check CO2
   if (liveData.co2.value > THRESHOLDS.co2) {
     console.log(`CO2 anomaly detected: ${liveData.co2.value} > ${THRESHOLDS.co2}`);
     anomalies.push({
-      
+
       timestamp: new Date().toISOString(),
-      title: 'High CO2 Level', 
+      title: 'High CO2 Level',
       priority: 'high',
       zone: 'Downtown',
       description: `CO₂ level (${liveData.co2.value} ppm) has exceeded the threshold of ${THRESHOLDS.co2} ppm.`,
     });
   }
-  
+
   // Check CO
   if (liveData.co.value > THRESHOLDS.co) {
     console.log(`CO anomaly detected: ${liveData.co.value} > ${THRESHOLDS.co}`);
     anomalies.push({
-      
+
       timestamp: new Date().toISOString(),
-      title: 'High CO Level', 
+      title: 'High CO Level',
       priority: 'high',
       zone: 'Downtown',
       description: `CO level (${liveData.co.value} ppm) has exceeded the threshold of ${THRESHOLDS.co} ppm.`,
@@ -104,9 +104,9 @@ export const checkForAnomalies = async (liveData: any) => {
   if (liveData.temperature.value > THRESHOLDS.temperature) {
     console.log(`Temperature anomaly detected: ${liveData.temperature.value} > ${THRESHOLDS.temperature}`);
     anomalies.push({
-     
+
       timestamp: new Date().toISOString(),
-      title: 'High Temparature', 
+      title: 'High Temparature',
       priority: 'high',
       zone: 'Downtown',
       description: `Temperature (${liveData.temperature.value}°C) has exceeded the threshold of ${THRESHOLDS.temperature}°C.`,
@@ -117,9 +117,9 @@ export const checkForAnomalies = async (liveData: any) => {
   if (liveData.humidity.value > THRESHOLDS.humidity) {
     console.log(`Humidity anomaly detected: ${liveData.humidity.value} > ${THRESHOLDS.humidity}`);
     anomalies.push({
-      
+
       timestamp: new Date().toISOString(),
-      title: 'High Humidity', 
+      title: 'High Humidity',
       priority: 'high',
       zone: 'Downtown',
       description: `Humidity (${liveData.humidity.value}%) has exceeded the threshold of ${THRESHOLDS.humidity}%.`,
@@ -130,7 +130,7 @@ export const checkForAnomalies = async (liveData: any) => {
   for (const anomaly of anomalies) {
     await addAnomaly(anomaly);
   }
-  
+
   return anomalies.length > 0 ? anomalies : null;
 };
 
@@ -140,17 +140,17 @@ export const addAnomaly = async (anomaly: any) => {
     const anomaliesRef = ref(database, 'anomalies');
     const snapshot = await get(anomaliesRef);
     const existingAnomalies = snapshot.val() || [];
-    
+
     // Add new anomaly at the beginning
     const newAnomalies = [anomaly, ...existingAnomalies];
-    
+
     // Keep only the 10 most recent anomalies
     if (newAnomalies.length > 10) {
       newAnomalies.length = 10;
     }
-    
+
     console.log("Updated anomalies:", newAnomalies);
-    
+
     // Update Firebase
     await set(anomaliesRef, newAnomalies);
     return true;
@@ -200,7 +200,7 @@ export const storage = {
 // Generate sample AQI data for Firebase
 export async function populateSampleData(): Promise<void> {
   const now = Date.now();
-  
+
   const sampleData: FirebaseAQIData = {
     parameters: {
       pm25: { value: 35, unit: 'μg/m³' },
@@ -238,31 +238,31 @@ export async function populateSampleData(): Promise<void> {
       }
     },
     anomalies: {
-      0: { 
-        title: 'Sudden PM2.5 Spike', 
+      0: {
+        title: 'Sudden PM2.5 Spike',
         description: 'Unexpected increase in PM2.5 levels detected in Downtown area. Possible causes include traffic congestion or construction activity.',
-        timestamp: now - 1800000, 
+        timestamp: now - 1800000,
         priority: 'high',
         zone: 'Downtown'
       },
-      1: { 
-        title: 'CO₂ Threshold Warning', 
+      1: {
+        title: 'CO₂ Threshold Warning',
         description: 'CO₂ levels trending upward in Westside industrial zone. Approaching regulatory threshold limits.',
-        timestamp: now - 3600000, 
+        timestamp: now - 3600000,
         priority: 'medium',
         zone: 'Westside'
       },
-      2: { 
-        title: 'Sensor Malfunction', 
+      2: {
+        title: 'Sensor Malfunction',
         description: 'Temperature sensor at North Valley station reporting inconsistent values. Scheduled for maintenance.',
-        timestamp: now - 86400000, 
+        timestamp: now - 86400000,
         priority: 'low',
         zone: 'North Valley'
       },
-      3: { 
-        title: 'Calibration Complete', 
+      3: {
+        title: 'Calibration Complete',
         description: 'All sensors in Eastside monitoring station have been successfully calibrated.',
-        timestamp: now - 172800000, 
+        timestamp: now - 172800000,
         priority: 'resolved',
         zone: 'Eastside'
       }
@@ -322,7 +322,7 @@ export async function populateSampleData(): Promise<void> {
 
 
 
-  
+
   try {
     await writeData('/', sampleData);
     await set(ref(database, 'sensorLocations'), sensorLocations);

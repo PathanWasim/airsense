@@ -42,37 +42,69 @@ Visit `http://localhost:5001` to see the application.
 
 ## 📝 Environment Setup
 
-Create a `.env` file with:
+Copy the example environment file and configure your API keys:
+
+```bash
+cp .env.example .env
+```
+
+Then update `.env` with your actual API keys:
 
 ```env
+# Database Configuration
 DATABASE_URL=postgresql://username:password@localhost:5432/airsense
-OPENAI_API_KEY=your_openai_api_key
-GOOGLE_AI_API_KEY=your_google_ai_api_key
+
+# AI API Keys (Required for AI features)
+GOOGLE_AI_API_KEY=your_google_ai_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Firebase Configuration (Required for real-time features)
+VITE_FIREBASE_API_KEY=your_firebase_api_key_here
+VITE_FIREBASE_PROJECT_ID=airsense-9c60e
+# ... other Firebase config
 ```
+
+**⚠️ Security Note**: Never commit API keys to version control. All sensitive keys should be stored in environment variables. See [SECURITY.md](SECURITY.md) for detailed security guidelines.
 
 ## 🧠 AI Forecasting Model
 
 The project includes a custom Python-based machine learning system for air quality forecasting:
 
-- **Models**: Random Forest & Gradient Boosting regressors
-- **Features**: Weather data, temporal patterns, lag features, rolling averages
-- **Predictions**: 24-hour forecasts for PM2.5, PM10, CO2, NO2, SO2, O3
-- **AQI Calculation**: Converts pollutant levels to Air Quality Index
-- **API**: Flask-based REST API for real-time predictions
+- **Models**: Random Forest & Gradient Boosting regressors for robust predictions
+- **Multi-pollutant Forecasting**: Predicts PM2.5, PM10, CO2, NO2, SO2, and O3 levels
+- **Time Series Features**: Incorporates lag features, rolling averages, and temporal patterns
+- **AQI Calculation**: Converts pollutant concentrations to Air Quality Index
+- **REST API**: Flask-based API for integration with the main application
+- **Synthetic Data Generation**: Creates realistic training data with seasonal patterns
+
+### AI Model Features
+- **Weather Dependencies**: Temperature, humidity, wind speed, pressure integration
+- **Temporal Patterns**: Hour of day, day of week, seasonal variations
+- **Lag Features**: Previous 1-hour and 24-hour values for trend analysis
+- **Rolling Averages**: 3-hour and 24-hour moving averages
+- **Automatic Model Selection**: Chooses best performing model per pollutant
 
 ### Quick Start with AI
 ```bash
 # Install Python dependencies
-npm run ai:install
+cd ai_model && pip install -r requirements.txt
 
 # Train the models (generates synthetic training data)
-npm run ai:train
+python air_quality_forecaster.py
 
-# Start both services
-npm run dev:full
+# Start the forecast API
+python forecast_api.py
+
+# Or use npm scripts
+npm run ai:install && npm run ai:train && npm run dev:full
 ```
 
 The AI service runs on `http://localhost:5002` and provides forecasting endpoints.
+
+### API Endpoints
+- `GET /health` - Health check endpoint
+- `POST /forecast` - Generate air quality forecast with weather data
+- `POST /train` - Retrain models with new data
 
 ## 📦 Available Scripts
 

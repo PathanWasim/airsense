@@ -15,6 +15,15 @@ server/public/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+
+# API Keys and secrets (extra protection)
+**/config/keys.js
+**/config/keys.ts
+**/*secret*
+**/*key*
+!**/package-lock.json
+!**/yarn.lock
 
 # Database
 *.db

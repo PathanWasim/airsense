@@ -1,4 +1,4 @@
-const API_KEY = "AIzaSyD3g2khu5PZzsnmj5_kbQxEFNIW66p8CKU"; // Use your real key
+const API_KEY = import.meta.env.VITE_GOOGLE_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
 // Define input/output interfaces
@@ -49,6 +49,12 @@ Please provide the following response in bulleted list format with arrows or emo
 // Direct API call using fetch (no SDK)
 export async function getAirQualityResponse(request: AirQualityRequest): Promise<AirQualityResponse> {
   try {
+    if (!API_KEY) {
+      return {
+        message: "Google AI API key is not configured. Please set VITE_GOOGLE_AI_API_KEY in your environment variables."
+      };
+    }
+
     const prompt = buildPrompt(request);
 
     const body = {
