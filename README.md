@@ -9,7 +9,8 @@ A modern air quality monitoring dashboard with real-time data visualization, AI-
 - 📊 **Real-time Monitoring** - Track PM2.5, PM10, CO2, and other air quality parameters
 - 🗺️ **Interactive Maps** - Visualize air quality data across different locations
 - 🤖 **AI Assistant** - Get intelligent insights powered by Google Gemini
-- 📈 **Smart Forecasting** - 6-hour and 3-day air quality predictions
+- 🧠 **ML Forecasting** - Custom Python ML models for accurate air quality predictions
+- 📈 **Smart Forecasting** - 6-hour and 3-day air quality predictions with AQI calculations
 - 🚨 **Alert System** - Email/SMS notifications for pollution levels
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile
 
@@ -36,7 +37,8 @@ Visit `http://localhost:5001` to see the application.
 
 **Frontend:** React 18, TypeScript, TailwindCSS, shadcn/ui, Leaflet Maps  
 **Backend:** Express.js, PostgreSQL, Drizzle ORM, WebSocket  
-**AI:** OpenAI, Google Gemini, Anthropic Claude  
+**AI/ML:** Custom Python ML models (Random Forest, Gradient Boosting), OpenAI, Google Gemini  
+**Forecasting:** Scikit-learn, TensorFlow, Flask API  
 
 ## 📝 Environment Setup
 
@@ -48,13 +50,43 @@ OPENAI_API_KEY=your_openai_api_key
 GOOGLE_AI_API_KEY=your_google_ai_api_key
 ```
 
+## 🧠 AI Forecasting Model
+
+The project includes a custom Python-based machine learning system for air quality forecasting:
+
+- **Models**: Random Forest & Gradient Boosting regressors
+- **Features**: Weather data, temporal patterns, lag features, rolling averages
+- **Predictions**: 24-hour forecasts for PM2.5, PM10, CO2, NO2, SO2, O3
+- **AQI Calculation**: Converts pollutant levels to Air Quality Index
+- **API**: Flask-based REST API for real-time predictions
+
+### Quick Start with AI
+```bash
+# Install Python dependencies
+npm run ai:install
+
+# Train the models (generates synthetic training data)
+npm run ai:train
+
+# Start both services
+npm run dev:full
+```
+
+The AI service runs on `http://localhost:5002` and provides forecasting endpoints.
+
 ## 📦 Available Scripts
 
 ```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run start    # Start production server
-npm run check    # TypeScript type checking
+npm run dev         # Start development server
+npm run build       # Build for production
+npm run start       # Start production server
+npm run check       # TypeScript type checking
+
+# AI Forecasting Model
+npm run ai:install  # Install Python dependencies
+npm run ai:train    # Train ML models
+npm run ai:serve    # Start AI forecast API
+npm run dev:full    # Start both Node.js and Python services
 ```
 
 ## 🏗️ Project Structure
@@ -63,7 +95,9 @@ npm run check    # TypeScript type checking
 ├── client/          # React frontend
 ├── server/          # Express backend
 ├── shared/          # Shared types & schemas
-└── migrations/      # Database migrations
+├── ai_model/        # Python ML forecasting models
+├── migrations/      # Database migrations
+└── docker-compose.yml # Multi-service deployment
 ```
 
 ## 🤝 Contributing
